@@ -6,7 +6,7 @@ author: Geoff Lee
 
 Overview
 --------
-
+*********************** Unstable! Do not use! ************************
 Push scripts from a Git repo to a JSS. Includes templating and tagging.
 
 Installation / Usage
