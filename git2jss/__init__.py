@@ -13,13 +13,15 @@ import jss
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
 
+The tool can create a new tag, or push scripts from an existing tag.
+
 The 'notes' field of the JSS script object will contain the Git log for the corresponding
 Script file. Some templating is also carried out.
 
 You need to have the jss-python module installed and configured appropriately to talk to your JSS.
 MANY thanks to sheagcraig for that module:  https://github.com/sheagcraig/python-jss
 
-TEMPLATING: The following fields, if present in the script file, will be templated with values from Git:
+TEMPLATING: The following fields, if present in the script file, will be templated with values from Git
 
 @@DATE Date of last change
 @@VERSION The name of the TAG this file was pushed from
