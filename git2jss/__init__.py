@@ -78,7 +78,7 @@ def _get_args():
 
     return options
 
-def _main(options):
+def main():
     """ Main function """
     # Make TMPDIR global so that it can be used by
     # the cleanup_tmp() function, regardless of
@@ -89,6 +89,8 @@ def _main(options):
     global TMPDIR
     # pylint: disable=
     TMPDIR = make_temp_dir()
+
+    options = _get_args()
 
     if not tag_exists(options.tag):
         if options.create_tag:
@@ -277,4 +279,4 @@ def save_script(jss_script):
 
 
 if __name__ == "__main__":
-    _main(_get_args())
+    main()

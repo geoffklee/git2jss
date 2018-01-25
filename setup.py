@@ -36,5 +36,8 @@ setup(
     author='Geoff Lee',
     install_requires=install_requires,
     dependency_links=dependency_links,
-    author_email='g.lee@ed.ac.uk'
+    author_email='g.lee@ed.ac.uk',
+    setup_requires = ['pytest-runner'],
+    tests_require = ['pytest'],
+    scripts = ['bin/git2jss']
 )

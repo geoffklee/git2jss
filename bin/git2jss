@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+import git2jss
+
+git2jss.main()

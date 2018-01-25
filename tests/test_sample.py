@@ -1,4 +1,10 @@
-# Sample Test passing with nose and pytest
+import subprocess
 
-def test_pass():
-        assert True, "dummy sample test"
+def test_lint():
+    try:
+        subprocess.check_output(["pylint", "git2jss/__init__.py"])
+    except subprocess.CalledProcessError as error:
+        print(error.output)
+        print("test_lint() failed.")
+        assert False
+
