@@ -6,18 +6,12 @@ author: Geoff Lee
 
 Overview
 --------
-*********************** Unstable! Do not use! ************************
 Push scripts from a Git repo to a JSS. Includes templating and tagging.
 
 Installation / Usage
 --------------------
 
-To install use pip:
-
-    $ pip install git2jss
-
-
-Or clone the repo:
+Clone the repo:
 
     $ git clone https://github.com/gkluoe/git2jss.git
     $ python setup.py install
@@ -25,7 +19,7 @@ Or clone the repo:
 Contributing
 ------------
 
-TBD
+Pull requests welcome!
 
 Example
 -------
