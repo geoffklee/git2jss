@@ -1,4 +1,5 @@
 """ git2jss: synchronise JSS scripts with a Git tag """
+import sys
 import subprocess
 import dircache
 import os
@@ -44,13 +45,16 @@ class Git2JSSError(BaseException):
 def _get_args():
     """ Parse arguments from the commandline and return something sensible """
 
-    parser = argparse.ArgumentParser(usage=('git2jss [-h] [--create] '
+    parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [--create] '
                                             '[--all | --file FILE '
-                                            '[ --name NAME ] ] TAG'),
+                                            '[ --name NAME ] ] --tag TAG'),
                                      description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument('tag', metavar='TAG', type=str,
+    parser.add_argument('-i', '--jss-info', action='store_true', dest='jss_info',
+                        help="Show information about the currently configured JSS")
+
+    parser.add_argument('--tag', metavar='TAG', type=str, default=False,
                         help=('Name of the TAG in Git. The tag must have been pushed to origin: '
                               'locally committed tags will not be accepted.'))
 
@@ -78,6 +82,15 @@ def _get_args():
         print "WARNING: --all was specified so ignoring --name option"
         options.script_name = None
 
+    # Unless we've only been asked for JSS info, we need a tag to do anything
+    if not options.jss_info and not options.tag:
+        parser.error("Which tag do you want to push? Please specify with '--tag'")
+
+    # We need to know which files to operate on!
+    if options.tag and not (options.script_file or options.push_all):
+        parser.error("You need to specify either a filename "
+                     "(--file FILE) or all files (--all)")
+
     return options
 
 def main():
@@ -94,16 +107,25 @@ def main():
 
     options = _get_args()
 
+    # Create a new JSS object
+    jss_prefs = jss.JSSPrefs()
+    _jss = jss.JSS(jss_prefs)
+
+    # If '--jss-info' was requested, just give the information
+    if options.jss_info:
+        print ("\n\nJSS: %s\n"
+               "Username: %s\n"
+               "File: %s\n\n") % (jss_prefs.url,
+                                  jss_prefs.user,
+                                  jss_prefs.preferences_file)
+        sys.exit(0)
+
     if not tag_exists(options.tag):
         if options.create_tag:
             create_tag(options.tag, "Tagged by Git2JSS")
         else:
             raise Git2JSSError("Tag does not exist. If you want to create it you can "
                                "specify --create on the commandline.")
-
-    # Create a new JSS object
-    jss_prefs = jss.JSSPrefs()
-    _jss = jss.JSS(jss_prefs)
 
     print "Pushing tag %s to jss: %s" % (options.tag, jss_prefs.url)
 
