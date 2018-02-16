@@ -36,6 +36,7 @@ TEMPLATING: The following fields, if present in the script file, will be templat
 EPILOG = """
 """
 
+VERSION = "0.0.1"
 TMPDIR = None
 
 class Git2JSSError(BaseException):
@@ -48,7 +49,7 @@ def _get_args():
     parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [--create] '
                                             '[--all | --file FILE '
                                             '[ --name NAME ] ] --tag TAG'),
-                                     description=DESCRIPTION, epilog=EPILOG,
+                                     version=VERSION, description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-i', '--jss-info', action='store_true', dest='jss_info',
