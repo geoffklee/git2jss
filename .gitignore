@@ -10,6 +10,7 @@
 # Packages
 *.egg
 *.egg-info
+.eggs/
 build
 eggs
 parts
@@ -27,6 +28,7 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
+.pytest_cache/
 
 # Complexity
 output/*.html
@@ -37,3 +39,10 @@ docs/_build
 
 # Cookiecutter
 output/
+
+# MacOS
+.DS_Store
+
+#setuptools	
+.cache/
+dist/
