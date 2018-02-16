@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
     author='Geoff Lee',
-    install_requires=install_requires,
+    install_requires='python-jss',
     dependency_links=dependency_links,
     author_email='g.lee@ed.ac.uk',
     setup_requires = ['pytest-runner'],
