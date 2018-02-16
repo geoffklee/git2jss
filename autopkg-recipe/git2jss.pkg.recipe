@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Description</key>
-    <string>Downloads version 0.0.2 of the git2jss source and packages it</string>
+    <string>Downloads version the git2jss source and packages it</string>
     <key>Identifier</key>
     <string>com.github.gkluoe.pkg.git2jss</string>
     <key>Input</key>
@@ -88,6 +88,16 @@
                             <string>root</string>
                             <key>group</key>
                             <string>wheel</string>
+                        </dict>
+                        <dict>
+                            <key>path</key>
+                            <string>usr/local/bin/%NAME%</string>
+                            <key>user</key>
+                            <string>root</string>
+                            <key>group</key>
+                            <string>wheel</string>
+                            <key>mode</key>
+                            <string>0755</string>
                         </dict>
                     </array>
                 </dict>
