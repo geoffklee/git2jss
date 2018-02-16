@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Description</key>
-    <string>Downloads version 0.0.1 of the git2jss source and packages it</string>
+    <string>Downloads version 0.0.2 of the git2jss source and packages it</string>
     <key>Identifier</key>
     <string>com.github.gkluoe.pkg.git2jss</string>
     <key>Input</key>
@@ -11,7 +11,7 @@
         <key>NAME</key>
         <string>git2jss</string>
         <key>VERSION</key>
-        <string>0.0.1</string>
+        <string>0.0.2</string>
         <key>DOWNLOAD_URL</key>
         <string>https://github.com/gkluoe/git2jss/archive/v%VERSION%.zip</string>
     </dict>
