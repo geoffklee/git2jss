@@ -44,7 +44,7 @@ class Git2JSSError(BaseException):
 def _get_args():
     """ Parse arguments from the commandline and return something sensible """
 
-    parser = argparse.ArgumentParser(usage=('release-to-jss.py [-h] [--create] '
+    parser = argparse.ArgumentParser(usage=('git2jss [-h] [--create] '
                                             '[--all | --file FILE '
                                             '[ --name NAME ] ] TAG'),
                                      description=DESCRIPTION, epilog=EPILOG,
