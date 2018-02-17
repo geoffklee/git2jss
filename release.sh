@@ -5,6 +5,8 @@
 # Bail immediately if anything fails
 set -Eeuo pipefail
 
+pip install bumpversion twine
+
 release_level=${1}
 
 if [ "${release_level}" != "major" ] &&\
