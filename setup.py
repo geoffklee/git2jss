@@ -16,7 +16,7 @@ setup(
     description='Push scripts from a Git repo to a JSS. Includes templating and tagging.',
     long_description=long_description,
     url='https://github.com/gkluoe/git2jss',
-    download_url='https://github.com/gkluoe/git2jss/tarball/' + __version__,
+    download_url='https://github.com/gkluoe/git2jss/tarball/v' + __version__,
     license='Apache Software License',
     classifiers=[
       'Development Status :: 4 - Beta',
