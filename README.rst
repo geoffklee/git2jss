@@ -11,7 +11,7 @@ Overview
 
 **Answer:** *Automate it!*
 
-*Git2jss* allows you to make changes to a JSS scripts in your dev/test environment, push them to a git repository, and then export a tagged copy to your JSS, complete with the git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
+*Git2jss* allows you to make changes to JSS scripts in your dev/test environment, push them to a git repository, and then export a tagged copy to your JSS, complete with the git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
 
 Templating of some important values is also supported, so your scripts automatically contain details of the last change, and where they can be found in source control.
 
