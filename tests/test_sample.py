@@ -1,10 +1,11 @@
-import subprocess
+from pylint import epylint as lint
 
 def test_lint():
-    try:
-        subprocess.check_output(["pylint", "git2jss/__init__.py"])
-    except subprocess.CalledProcessError as error:
-        print(error.output)
-        print("test_lint() failed.")
-        assert False
+    (out, err) = lint.py_run('git2jss', return_std="True")
+    result = out.read()
+    if not '10.00/10' in result.split(" "):
+       print "Failed pylint!"
+       print result 
+       assert False
+    
 
