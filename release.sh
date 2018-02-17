@@ -3,7 +3,7 @@
 # It will create a new tag push it to github and push a source distribution to pypi
 
 # Bail immediately if anything fails
-set -e
+set -Eeuo pipefail
 
 release_level=${1}
 
@@ -25,7 +25,7 @@ python setup.py test
 new_version="$(bumpversion --list patch | awk -F '=' '/new_version/ {print $2}')"
 
 # Commit the tag
-git push origin "${new_version}"
+git push origin v"${new_version}"
 
 rm -rf dist/*
 
