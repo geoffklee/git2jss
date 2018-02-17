@@ -1,7 +1,7 @@
 Git2JSS
 ===============================
 
-version number: 0.0.3
+version number: 0.0.4
 
 author: Geoff Lee
 
