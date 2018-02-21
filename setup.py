@@ -28,7 +28,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
     author='Geoff Lee',
-    install_requires=['python-jss'],
+    install_requires=['python-jss', 'keyring'],
     author_email='g.lee@ed.ac.uk',
     setup_requires = ['pytest-runner'],
     tests_require = ['pytest-runner', 'pytest', 'pylint'],
