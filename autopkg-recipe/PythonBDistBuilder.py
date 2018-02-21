@@ -15,6 +15,7 @@
 import os
 from zipfile import ZipFile
 from subprocess import check_call
+from pkg_resources import packaging
 # Pylint can't load autopkglib, so stop it moaning
 #pylint: disable=locally-disabled,import-error
 from autopkglib import Processor, ProcessorError
@@ -44,7 +45,7 @@ class PythonBDistBuilder(Processor):
         """Build and then unzip the distribution"""
         try:
             os.chdir(self.env['source_path'])
-            check_call(['/usr/bin/env', 'python', 'setup.py',
+            check_call(['/usr/bin/python', 'setup.py',
                         'bdist', '-p', 'macOS', '--formats', 'zip'])
             self.output("Built dist at %s" % self.env['source_path'])
         except BaseException, err:
@@ -54,8 +55,21 @@ class PythonBDistBuilder(Processor):
         # Now, unzip the built distribution to give us a file hierarchy
         bdist_root = self.env['RECIPE_CACHE_DIR'] + '/bdist_root'
         try:
+            # The python packaging tools  will 'normalise' the version number
+            # - we need to do the same, or ours may not match.
+            # This code is cribbed from the module that does it. 
+            # See setuptools/dist.py
+            ver = packaging.version.Version(self.env['VERSION'])
+            normalised_version = str(ver)
+            if self.env['VERSION'] != normalized_version:
+                self.output(
+                    "Normalizing '%s' to '%s'" % (
+                        self.env['VERSION'],
+                        normalized_version,
+                    )
+                )
             zipped = ZipFile('./dist/' + self.env['NAME'] +
-                             '-' + self.env['VERSION'] + '.macOS.zip')
+                             '-' + normalised_version + '.macOS.zip')
             zipped.extractall(path=bdist_root)
             self.output("Unzipped built distribution root at %s" % bdist_root)
             self.env['bdist_root'] = bdist_root
