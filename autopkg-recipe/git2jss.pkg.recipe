@@ -11,7 +11,7 @@
         <key>NAME</key>
         <string>git2jss</string>
         <key>VERSION</key>
-        <string>0.1.0-dev2</string>
+        <string>0.1.1.dev1</string>
         <key>DOWNLOAD_URL</key>
         <string>https://github.com/gkluoe/git2jss/archive/v%VERSION%.zip</string>
     </dict>

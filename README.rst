@@ -1,7 +1,7 @@
 Git2JSS
 ===============================
 
-version number: 0.1.0-dev2
+version number: 0.1.1.dev1
 
 author: Geoff Lee
 
