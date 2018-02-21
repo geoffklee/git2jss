@@ -61,11 +61,11 @@ class PythonBDistBuilder(Processor):
             # See setuptools/dist.py
             ver = packaging.version.Version(self.env['VERSION'])
             normalised_version = str(ver)
-            if self.env['VERSION'] != normalized_version:
+            if self.env['VERSION'] != normalised_version:
                 self.output(
-                    "Normalizing '%s' to '%s'" % (
+                    "Normalising '%s' to '%s'" % (
                         self.env['VERSION'],
-                        normalized_version,
+                        normalised_version,
                     )
                 )
             zipped = ZipFile('./dist/' + self.env['NAME'] +
