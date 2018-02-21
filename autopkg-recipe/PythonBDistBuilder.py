@@ -13,6 +13,7 @@
 # limitations under the License.
 """Processor to build a python distutils project"""
 import os
+import shutil
 from zipfile import ZipFile
 from subprocess import check_call
 from pkg_resources import packaging
@@ -51,9 +52,12 @@ class PythonBDistBuilder(Processor):
         except BaseException, err:
             raise ProcessorError("Can't build dist at %s: %s"
                                  % (self.env['source_path'], err))
-
+        
         # Now, unzip the built distribution to give us a file hierarchy
         bdist_root = self.env['RECIPE_CACHE_DIR'] + '/bdist_root'
+        # Make sure we have a clean target directory
+        if os.path.isdir(bdist_root):
+            shutil.rmtree(bdist_root)
         try:
             # The python packaging tools  will 'normalise' the version number
             # - we need to do the same, or ours may not match.
