@@ -25,6 +25,7 @@ import shutil
 from string import Template
 from base64 import b64encode
 import jss
+from .jss_keyring import KJSSPrefs
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
 
@@ -61,7 +62,7 @@ def _get_args():
     """ Parse arguments from the commandline and return something sensible """
 
     parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [--create] '
-                                            '[--all | --file FILE '
+                                            '[ --no-keychain] [--all | --file FILE '
                                             '[ --name NAME ] ] --tag TAG'),
                                      version=VERSION, description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -79,6 +80,9 @@ def _get_args():
 
     parser.add_argument('--create', action='store_true', default=False, dest='create_tag',
                         help="If TAG doesn't exist, then create it and push to the server")
+
+    parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
+                        help='Do not store authentication credentials in the system keychain')
 
     file_or_all = parser.add_mutually_exclusive_group()
 
@@ -123,7 +127,11 @@ def main():
     options = _get_args()
 
     # Create a new JSS object
-    jss_prefs = jss.JSSPrefs()
+    if options.no_keychain:
+        jss_prefs = jss.JSSPrefs()
+    else:
+        jss_prefs = KJSSPrefs()
+
     _jss = jss.JSS(jss_prefs)
 
     # If '--jss-info' was requested, just give the information
