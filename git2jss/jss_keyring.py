@@ -7,9 +7,10 @@ import subprocess
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 
-from jss.exceptions import (JSSError, JSSPrefsMissingKeyError)
+from jss.exceptions import (JSSError, JSSPrefsMissingKeyError,
+                            JSSPrefsMissingFileError)
 
-from jss.tools import (is_osx, loop_until_valid_response)
+from jss.tools import (is_osx, is_linux, loop_until_valid_response)
 try:
     from jss.contrib import FoundationPlist
 except ImportError as err:
@@ -25,7 +26,47 @@ class KJSSPrefs(jss.JSSPrefs):
     """ This is a subclass of the JSSPrefs class which stores passwords in 
         the system keychain, rather than in plaintext in a preference file.
     """
-    
+
+    def __init__(self, preferences_file=None):
+        """Create a preferences object.
+        This JSSPrefs object can be used as an argument for a new JSS.
+        By default and with no arguments, it uses the preference domain
+        "com.github.sheagcraig.python-jss.plist". However, alternate
+        configurations can be supplied to the __init__ method to use
+        something else.
+        If no preferences file is specified, an interactive config
+        method will run to help set up python-jss.
+        See the JSSPrefs __doc__ for information on supported
+        preferences.
+        Args:
+            preferences_file: String path to an alternate location to
+            look for preferences. Defaults base on OS:
+                OS X: "~/Library/Preferences/com.github.sheagcraig.python-jss.plist"
+                Linux: "~/.com.github.sheagcraig.python-jss.plist"
+        Raises:
+            JSSError if using an unsupported OS.
+        """
+        if preferences_file is None:
+            plist_name = "com.github.sheagcraig.python-jss.plist"
+            if is_osx():
+                preferences_file = os.path.join("~", "Library", "Preferences",
+                                                plist_name)
+            elif is_linux():
+                preferences_file = os.path.join("~", "." + plist_name)
+            else:
+                raise JSSError("Unsupported OS.")
+
+        self.preferences_file = os.path.expanduser(preferences_file)
+        if os.path.exists(self.preferences_file):
+            self.parse_plist(self.preferences_file)
+
+        else:
+            self.configure()
+            if not os.path.exists(self.preferences_file):
+                raise JSSPrefsMissingFileError("Preferences file not found!")
+            else:
+                jss.JSSPrefs.__init__(self, preferences_file=self.preferences_file)   # pylint: disable=non-parent-init-called
+                
     def configure(self):
         """Prompt user for config and write to plist
 
@@ -97,11 +138,9 @@ class KJSSPrefs(jss.JSSPrefs):
                         "prefs file, and you didn't specify '--no-keychain'.\n"
                         "git2jss can remove the plaintext password "
                         "from the file and move it to the keychain for you. \n"
-                        "This is almost certainly a good idea but be warned "
-                        "that the jss-python module is not comptible with "
-                        "keychain-stored passwords.\nThat won't cause you a "
-                        "problem unless you need to use jss-python on this machine "
-                        "in a different context.\n")
+                        "This is almost certainly a good idea unless you really "
+                        "know what you are doing, and just forgot the --no-keychain "
+                        "flag.\n")
             print question
 
             while answer not in ['y', 'n']:
@@ -118,7 +157,8 @@ class KJSSPrefs(jss.JSSPrefs):
                        "You can use the --no-keychain flag to continue with "
                        "the plaintext password.")
                 raise JSSError("Plaintext password without --no-keychain")
-                     
+
+        # This will throw an exception if the password is missing           
         self.password = get_creds_from_keychain(self.url, self.user)
         
         if not all([self.user, self.password, self.url]):
@@ -168,7 +208,6 @@ def get_creds_from_keychain(service, user):
         print "If you are running in a virtualenv, this is expected"
         print "See: https://github.com/jaraco/keyring/issues/219"
         raise
-    
     if result:
         return result
     else:

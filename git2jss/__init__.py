@@ -82,7 +82,9 @@ def _get_args():
                         help="If TAG doesn't exist, then create it and push to the server")
 
     parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
-                        help='Do not store authentication credentials in the system keychain')
+                        help=('Do not store authentication credentials in the system keychain.\n'
+                              'To use this option, you need to manually enter the password into '
+                              'the preferences file. You probably do not want to do this.'))
 
     file_or_all = parser.add_mutually_exclusive_group()
 
@@ -126,12 +128,20 @@ def main():
 
     options = _get_args()
 
-    # Create a new JSS object
-    if options.no_keychain:
-        jss_prefs = jss.JSSPrefs()
-    else:
-        jss_prefs = KJSSPrefs()
+    if jss.tools.is_osx():
+        prefs_file = os.path.join('~', 'Library', 'Preferences',
+                                  'com.github.gkluoe.git2jss.plist')
+    elif jss.tools.is_linux():
+        prefs_file = os.path.join("~", "." + 'com.github.gkluoe.git2jss.plist')
+        
 
+    if options.no_keychain:
+        jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
+    else:
+        # Use our subclass for keychain support
+        jss_prefs = KJSSPrefs(preferences_file=prefs_file)
+
+    # Create a new JSS object
     _jss = jss.JSS(jss_prefs)
 
     # If '--jss-info' was requested, just give the information
