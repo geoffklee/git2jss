@@ -20,7 +20,7 @@ Passwords are stored in the system keychain.
 Installation / Usage
 --------------------
 
-NB: the python-jss module is a requirement. If manually installing, you'll need to make sure it is present. 
+NB: the ``python-jss`` and ``keyring`` modules are required. If manually installing, you'll need to make sure they are present. 
 Installing via pip should take care of this for you.
 
 Install via pip
@@ -60,15 +60,21 @@ Commandline
 You can use it on the commandine like this::
 
   # Create a new tag, v1.0.1, and export my_great_script.py to a script object of the same name on the JSS
+  
   $ git2jss --file my_great_script.py --create --tag v1.0.1
 
-  # Push script localscript.sh to a script object on the JSS called do_something_great.sh, using the existing tag v0.0.9
+  # Export script localscript.sh to a script object on the JSS called do_something_great.sh
+  # using the existing tag v0.0.9
+  
   $ git2jss --file localscript.sh --name do_something_great.sh
 
-  # Push every script in the current folder which has a script object on the server with a matching name
+  # Export each script in the current folder that has a script object on the server
+  # with a matching name, and exists at tag v1.0.2
+  
   $ git2jss --all --tag v1.0.2
 
   # Show information about the currently configured JSS (or enter details if none configured)
+  
   $ git2jss --jss-info
 
 Templating
