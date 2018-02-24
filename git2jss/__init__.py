@@ -25,6 +25,7 @@ import shutil
 from string import Template
 from base64 import b64encode
 import jss
+from .jss_keyring import KJSSPrefs
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
 
@@ -50,7 +51,7 @@ TEMPLATING: The following fields, if present in the script file, will be templat
 EPILOG = """
 """
 
-VERSION = "0.0.6"
+VERSION = "0.1.0dev2"
 TMPDIR = None
 
 class Git2JSSError(BaseException):
@@ -61,7 +62,7 @@ def _get_args():
     """ Parse arguments from the commandline and return something sensible """
 
     parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [--create] '
-                                            '[--all | --file FILE '
+                                            '[ --no-keychain] [--all | --file FILE '
                                             '[ --name NAME ] ] --tag TAG'),
                                      version=VERSION, description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -79,6 +80,11 @@ def _get_args():
 
     parser.add_argument('--create', action='store_true', default=False, dest='create_tag',
                         help="If TAG doesn't exist, then create it and push to the server")
+
+    parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
+                        help=('Do not store authentication credentials in the system keychain.\n'
+                              'To use this option, you need to manually enter the password into '
+                              'the preferences file. You probably do not want to do this.'))
 
     file_or_all = parser.add_mutually_exclusive_group()
 
@@ -122,8 +128,20 @@ def main():
 
     options = _get_args()
 
+    if jss.tools.is_osx():
+        prefs_file = os.path.join('~', 'Library', 'Preferences',
+                                  'com.github.gkluoe.git2jss.plist')
+    elif jss.tools.is_linux():
+        prefs_file = os.path.join("~", "." + 'com.github.gkluoe.git2jss.plist')
+        
+
+    if options.no_keychain:
+        jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
+    else:
+        # Use our subclass for keychain support
+        jss_prefs = KJSSPrefs(preferences_file=prefs_file)
+
     # Create a new JSS object
-    jss_prefs = jss.JSSPrefs()
     _jss = jss.JSS(jss_prefs)
 
     # If '--jss-info' was requested, just give the information
