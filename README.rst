@@ -1,9 +1,9 @@
 Git2JSS
 ===============================
 
-version number: 0.1.0
+Version : v0.1.0
 
-author: Geoff Lee
+Author: Geoff Lee
 
 Overview
 --------
@@ -11,10 +11,11 @@ Overview
 
 **Answer:** *Automate it!*
 
-*Git2jss* allows you to make changes to JSS scripts in your dev/test environment, push them to a git repository, and then export a tagged copy to your JSS, complete with the git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
+Using *Git2jss*, after making changes to JSS scripts in your dev/test environment and pushing them to a Git repository, you can export a tagged copy to your JSS, complete with the Git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
 
 Templating of some important values is also supported, so your scripts automatically contain details of the last change, and where they can be found in source control.
 
+Passwords are stored in the system keychain.
 
 Installation / Usage
 --------------------
@@ -22,35 +23,82 @@ Installation / Usage
 NB: the python-jss module is a requirement. If manually installing, you'll need to make sure it is present. 
 Installing via pip should take care of this for you.
 
-Install via pip:
+Install via pip
+```````````````
 
-    ``pip install git2jss``
+If you're installing into a virtualenv
+
+    ``$ pip install git2jss``
+
+should be all you need to do.
     
-    ``pip install cryptography``
+
+If installing onto OS X 10.13 and not using a virtualenv,
+you'll need to use sudo, and install a missing dependency:
+
+    ``$ sudo pip install git2jss``
+    
+    ``$ sudo pip install cryptography``
 
 Or manually
+````````````
 
-    ``git clone https://github.com/gkluoe/git2jss.git``
+Clone the repo and run the setup script
+
+    ``$ git clone https://github.com/gkluoe/git2jss.git``
+
+    ``$ python setup.py install``
     
-    ``python setup.py install``
-    
+
+
+Examples
+--------
+
+Commandline
+```````````
+
+You can use it on the commandine like this::
+
+  # Create a new tag, v1.0.1, and export my_great_script.py to a script object of the same name on the JSS
+  $ git2jss --file my_great_script.py --create --tag v1.0.1
+
+  # Push script localscript.sh to a script object on the JSS called do_something_great.sh, using the existing tag v0.0.9
+  $ git2jss --file localscript.sh --name do_something_great.sh
+
+  # Push every script in the current folder which has a script object on the server with a matching name
+  $ git2jss --all --tag v1.0.2
+
+  # Show information about the currently configured JSS (or enter details if none configured)
+  $ git2jss --jss-info
+
+Templating
+``````````
+
+The following variables, if embedded into your script, will be replaced with the indicated values when being transferred to the JSS
+
++--------------+---------------------------------------------------------------------+
+| Variable     | Value                                                               | 
++==============+=====================================================================+
+| ``@@VERSION``| The name of the git tag that you have specified (eg v1.0.1)         |
++--------------+---------------------------------------------------------------------+
+| ``@@ORIGIN`` | Assuming you have a git remote called 'origin', the URL thereof     |
+|              | (eg https://github.com/uoe-macos/jss)                               |
++--------------+---------------------------------------------------------------------+
+| ``@@PATH``   | The name of the file in the git repository identified by @@ORIGIN`` |
++--------------+---------------------------------------------------------------------+
+| ``@@DATE``   | The date of the *last change* of the file in Git                    |
++--------------+---------------------------------------------------------------------+
+| ``@@USER``   | The username used by git2jss to authenticate to the JSS at          |
+|              | the time the script was exported                                    |
++--------------+---------------------------------------------------------------------+
+| ``@@LOG``    | The entire Git log for this script, formatted thus:                 |
+|              | ``'%h - %cD %ce: %n %s%n'``                                         |
++--------------+---------------------------------------------------------------------+
+
+``@@LOG`` is used to construct the 'Notes' field in the JSS, overwriting anything that was present previously.
+
+
 Contributing
 ------------
 
 Issues and pull requests are very welcome!
-
-Examples
---------
-You can use it like this::
-
-  # Create a new tag, v1.0.1, and export my_great_script.py to a script object of the same name on the JSS
-  git2jss --file my_great_script.py --create --tag v1.0.1
-
-  # Push script localscript.sh to a script object on the JSS called do_something_great.sh, using the existing tag v0.0.9
-  git2jss --file localscript.sh --name do_something_great.sh
-
-  # Push every script in the current folder which has a script object on the server with a matching name
-  git2jss --all --tag v1.0.2
-
-  # Show information about the currently configured JSS
-  git2jss --jss-info
