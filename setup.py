@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-__version__ = '0.0.6'
+__version__ = '0.1.0dev2'
 
 here = path.abspath(path.dirname(__file__))
 
@@ -28,7 +28,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
     author='Geoff Lee',
-    install_requires=['python-jss'],
+    install_requires=['python-jss', 'keyring'],
     author_email='g.lee@ed.ac.uk',
     setup_requires = ['pytest-runner'],
     tests_require = ['pytest-runner', 'pytest', 'pylint'],
