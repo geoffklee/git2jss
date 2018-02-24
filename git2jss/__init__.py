@@ -53,7 +53,7 @@ TEMPLATING: The following fields, if present in the script file, will be templat
 EPILOG = """
 """
 
-VERSION = "0.1.0dev2"
+VERSION = "0.1.0"
 TMPDIR = None
 
 class Git2JSSError(BaseException):
