@@ -28,6 +28,7 @@ from string import Template
 from base64 import b64encode
 import jss
 from .jss_keyring import KJSSPrefs
+from .vcs import GitRepo
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
 
@@ -124,9 +125,6 @@ def main():
     # pretend to know what I'm doing, but shut up
     # pylint anyway...
     # pylint: disable=locally-disabled,global-statement
-    global TMPDIR
-    # pylint: disable=
-    TMPDIR = make_temp_dir()
 
     options = _get_args()
 
@@ -155,18 +153,11 @@ def main():
                                   jss_prefs.preferences_file)
         sys.exit(0)
 
-    if not tag_exists(options.tag):
-        if options.create_tag:
-            create_tag(options.tag, "Tagged by Git2JSS")
-        else:
-            raise Git2JSSError("Tag does not exist. If you want to create it you can "
-                               "specify --create on the commandline.")
-
-    print "Pushing tag %s to jss: %s" % (options.tag, jss_prefs.url)
-
+    
+    _repo = GitRepo(options.tag, create=options.create_tag)
+    
     try:
-        checkout_tag(options.tag)
-
+        
         if options.push_all:
             files = [x for x in dircache.listdir(".")
                      if not re.match(r'^\.', x)
@@ -175,18 +166,13 @@ def main():
             files = [options.script_file]
 
         for script in files:
-            process_script(script, options, _jss)
+            process_script(script, options, _jss, _repo)
 
     except:
         print "Something went wrong."
         raise
     finally:
-        cleanup_tmp()
-
-def make_temp_dir():
-    """ Create a temporary directory """
-    return tempfile.mkdtemp()
-
+        _repo.__del__()
 
 def load_script(_jss, script_name):
     """ Load a script from the JSS and return a Script object """
@@ -198,7 +184,7 @@ def load_script(_jss, script_name):
         print "Loaded %s from the JSS" % script_name
         return jss_script
 
-def process_script(script, options, _jss):
+def process_script(script, options, _jss, _repo):
     """ Load the script from the JSS, insert the new
     code and log messages, the re-upload to the JSS
     """
@@ -214,55 +200,12 @@ def process_script(script, options, _jss):
         print "Skipping %s: couldn't load it from the JSS" % jss_name
         return
 
-    script_info = get_git_info(_jss, script, options.tag)
-    update_script(jss_script, script, script_info)
+    script_info = _repo.file_info(script)
+    update_script(jss_script, script, script_info, _repo)
     save_script(jss_script)
+    
 
-def checkout_tag(script_tag):
-    """ Check out a fresh copy of the tag we are going to operate on
-        script_tag must be present on the git master
-    """
-    origin = subprocess.check_output(["git", "config", "--get",
-                                      "remote.origin.url"]).strip()
-    if re.search(r'\.git$', origin):
-        origin = origin[:-4]
-    try:
-        print origin
-        fnull = open(os.devnull, 'w')
-        subprocess.check_call(["git", "clone", "-q", "--branch",
-                               script_tag, origin + ".git", TMPDIR],
-                              stderr=subprocess.STDOUT,
-                              stdout=fnull)
-    except subprocess.CalledProcessError:
-        raise Git2JSSError("Couldn't check out tag %s: are you sure it exists?" % script_tag)
-    else:
-        return True
-
-def tag_exists(tag):
-    """ Check whether a tag exists. Returns True or false """
-    tags = subprocess.check_output(['git', 'tag']).split('\n')
-    return tag in tags
-
-
-def create_tag(tag_name, msg):
-    """ Create tag if it doesn't exist """
-    if tag_exists(tag_name):
-        print "Tag %s already exists" % tag_name
-        raise Git2JSSError("Tag %s already exists" % tag_name)
-
-    subprocess.check_call(['git', 'tag', '-a', tag_name, '-m', msg])
-    subprocess.check_call(['git', 'push', 'origin', tag_name])
-
-    print "Tag %s pushed to master" % tag_name
-
-
-def cleanup_tmp():
-    """ General cleanup tasks. """
-    print "Cleaning up..."
-    shutil.rmtree(TMPDIR)
-    print "Cleaned up"
-
-def update_script(jss_script, script_file, script_info, should_template=True):
+def update_script(jss_script, script_file, script_info, _repo, should_template=True):
     """ Update the notes field to contain the git log,
         and, if requested, template the script
     """
@@ -272,7 +215,7 @@ def update_script(jss_script, script_file, script_info, should_template=True):
     # Update the script - we need to write a base64 encoded version
     # of the contents of script_file into the 'script_contents_encoded'
     # element of the script object
-    with io.open(TMPDIR + "/" + script_file, 'r', encoding="utf-8") as handle:
+    with io.open(_repo.path_to_file(script_file), 'r', encoding="utf-8") as handle:
         if should_template:
             print "Templating script..."
             jss_script.find('script_contents_encoded').text = b64encode(
@@ -285,24 +228,6 @@ def update_script(jss_script, script_file, script_info, should_template=True):
     # Only one of script_contents and script_contents_encoded should be sent
     # so delete the one we are not using.
     jss_script.remove(jss_script.find('script_contents'))
-
-
-def get_git_info(jss_prefs, script_file, script_tag):
-    """ Populate a dict with information about the script """
-    git_info = {}
-    git_info['VERSION'] = script_tag
-    git_info['ORIGIN'] = subprocess.check_output(["git", "config",
-                                                  "--get", "remote.origin.url"],
-                                                 cwd=TMPDIR).strip()
-    git_info['PATH'] = script_file
-    git_info['DATE'] = subprocess.check_output(["git", "log",
-                                                "-1", '--format="%ad"',
-                                                script_file], cwd=TMPDIR).strip()
-    git_info['USER'] = jss_prefs.user
-    git_info['LOG'] = subprocess.check_output(["git", "log",
-                                               '--format=%h - %cD %ce: %n %s%n',
-                                               script_file], cwd=TMPDIR).strip()
-    return git_info
 
 
 def template_script(text, script_info):

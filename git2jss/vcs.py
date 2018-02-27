@@ -60,8 +60,9 @@ class GitRepo():
         # how to make that work in this situation
         
         # Clean up our temp dir
-        print("Cleaning up tmpdir {}".format(self.TMPDIR))
-        shutil.rmtree(self.TMPDIR)
+        if os.path.exists(self.TMPDIR):
+            print("Cleaning up tmpdir {}".format(self.TMPDIR))
+            shutil.rmtree(self.TMPDIR)
 
         
     def _find_remote_name(self):
