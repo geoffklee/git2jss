@@ -119,13 +119,6 @@ def _get_args():
 
 def main():
     """ Main function """
-    # Make TMPDIR global so that it can be used by
-    # the cleanup_tmp() function, regardless of
-    # when it ends up gettig called. I don't really
-    # pretend to know what I'm doing, but shut up
-    # pylint anyway...
-    # pylint: disable=locally-disabled,global-statement
-
     options = _get_args()
 
     if jss.tools.is_osx():
