@@ -42,6 +42,7 @@ output/
 
 # MacOS
 .DS_Store
+*~
 
 #setuptools	
 .cache/
