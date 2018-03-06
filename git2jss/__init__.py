@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2018 Geoff Lee <g.lee@ed.ac.uk>             
+# Copyright (C) 2018 Geoff Lee <g.lee@ed.ac.uk>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """ git2jss: synchronise JSS scripts with a Git tag """
+from __future__ import print_function
 import sys
 import subprocess
 import dircache
@@ -55,7 +56,6 @@ EPILOG = """
 """
 
 VERSION = "0.1.0"
-TMPDIR = None
 
 class Git2JSSError(BaseException):
     """ Generic error class for this script """
@@ -103,7 +103,7 @@ def _get_args():
     # --name doesn't make any sense with --all, but argparse won't
     # let us express that with groups, so add in a hacky check here
     if options.push_all and options.script_name:
-        print "WARNING: --all was specified so ignoring --name option"
+        print("WARNING: --all was specified so ignoring --name option")
         options.script_name = None
 
     # Unless we've only been asked for JSS info, we need a tag to do anything
@@ -126,7 +126,7 @@ def main():
                                   'com.github.gkluoe.git2jss.plist')
     elif jss.tools.is_linux():
         prefs_file = os.path.join("~", "." + 'com.github.gkluoe.git2jss.plist')
-        
+
 
     if options.no_keychain:
         jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
@@ -139,18 +139,18 @@ def main():
 
     # If '--jss-info' was requested, just give the information
     if options.jss_info:
-        print ("\n\nJSS: %s\n"
+        print(("\n\nJSS: %s\n"
                "Username: %s\n"
                "File: %s\n\n") % (jss_prefs.url,
                                   jss_prefs.user,
-                                  jss_prefs.preferences_file)
+                                  jss_prefs.preferences_file))
         sys.exit(0)
 
-    
+
     _repo = GitRepo(options.tag, create=options.create_tag)
-    
+
     try:
-        
+
         if options.push_all:
             files = [x for x in dircache.listdir(".")
                      if not re.match(r'^\.', x)
@@ -162,7 +162,7 @@ def main():
             process_script(script, options, _jss, _repo)
 
     except:
-        print "Something went wrong."
+        print("Something went wrong.")
         raise
     finally:
         _repo.__del__()
@@ -174,7 +174,7 @@ def load_script(_jss, script_name):
     except:
         raise
     else:
-        print "Loaded %s from the JSS" % script_name
+        print("Loaded %s from the JSS" % script_name)
         return jss_script
 
 def process_script(script, options, _jss, _repo):
@@ -182,21 +182,21 @@ def process_script(script, options, _jss, _repo):
     code and log messages, the re-upload to the JSS
     """
     if not options.script_name:
-        print "No name specified, assuming %s" % script
+        print("No name specified, assuming %s" % script)
         jss_name = script
     else:
         jss_name = options.script_name
     try:
-        print "Loading %s" % jss_name
+        print("Loading %s" % jss_name)
         jss_script = load_script(_jss, jss_name)
     except jss.exceptions.JSSGetError:
-        print "Skipping %s: couldn't load it from the JSS" % jss_name
+        print("Skipping %s: couldn't load it from the JSS" % jss_name)
         return
 
     script_info = _repo.file_info(script)
     update_script(jss_script, script, script_info, _repo)
     save_script(jss_script)
-    
+
 
 def update_script(jss_script, script_file, script_info, _repo, should_template=True):
     """ Update the notes field to contain the git log,
@@ -208,36 +208,39 @@ def update_script(jss_script, script_file, script_info, _repo, should_template=T
     # Update the script - we need to write a base64 encoded version
     # of the contents of script_file into the 'script_contents_encoded'
     # element of the script object
-    with io.open(_repo.path_to_file(script_file), 'r', encoding="utf-8") as handle:
-        if should_template:
-            print "Templating script..."
-            jss_script.find('script_contents_encoded').text = b64encode(
-                template_script(handle.read(), script_info).encode('utf-8'))
-        else:
-            print "No templating requested."
-            jss_script.find('script_contents_encoded').text = b64encode(
-                handle.read().encode('utf-8'))
+    handle = _repo.get_file(script_file)
+    if should_template:
+        print("Templating script...")
+        jss_script.find('script_contents_encoded').text = b64encode(
+            template_script(handle, script_info).encode('utf-8'))
+    else:
+        print("No templating requested.")
+        jss_script.find('script_contents_encoded').text = b64encode(
+            handle.read().encode('utf-8'))
 
     # Only one of script_contents and script_contents_encoded should be sent
     # so delete the one we are not using.
     jss_script.remove(jss_script.find('script_contents'))
 
 
-def template_script(text, script_info):
-    """ Template the script. We use a custom delimiter to
-    reduce the risk of collisions """
+def template_script(handle, script_info):
+    """ Template the script. Pass in an open
+        file handle and receive a string containing
+        the templated text. We use a custom delimiter to
+        reduce the risk of collisions
+    """
 
     class JSSTemplate(Template):
         """ Template subclass with a custom delimiter """
         delimiter = '@@'
 
+    text = handle.read()
     tmpl = JSSTemplate(text)
     out = None
-
     try:
         out = tmpl.safe_substitute(script_info)
     except:
-        print "Failed to template this script."
+        print("Failed to template this script.")
         raise
 
     return out
@@ -248,10 +251,10 @@ def save_script(jss_script):
     try:
         jss_script.save()
     except:
-        print "Failed to save the script to the jss"
+        print("Failed to save the script to the jss")
         raise
     else:
-        print "Saved %s to the JSS." % jss_script.find('name').text
+        print("Saved %s to the JSS." % jss_script.find('name').text)
         return True
 
 
