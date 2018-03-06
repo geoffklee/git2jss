@@ -15,10 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """ git2jss: synchronise JSS scripts with a Git tag """
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 import sys
 import subprocess
-import dircache
 import os
 import io
 import re
@@ -30,6 +29,7 @@ from base64 import b64encode
 import jss
 from .jss_keyring import KJSSPrefs
 from .vcs import GitRepo
+
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
 
@@ -152,7 +152,7 @@ def main():
     try:
 
         if options.push_all:
-            files = [x for x in dircache.listdir(".")
+            files = [x for x in os.listdir(".")
                      if not re.match(r'^\.', x)
                      and re.match(r'.*\.(sh|py|pl)$', x)]
         else:

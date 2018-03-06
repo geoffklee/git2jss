@@ -14,16 +14,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-import jss
+""" A subclass of Shea Craig's JSSPreferences, which supports storing
+passwords in the system keychain
+"""
+from __future__ import absolute_import, division, print_function
 import getpass
-import keyring
 import os
 import readline   # pylint: disable=unused-import
 import subprocess
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
-
+from six.moves import input
+import keyring
+import jss
 from jss.exceptions import (JSSError, JSSPrefsMissingKeyError,
                             JSSPrefsMissingFileError)
 
@@ -35,12 +38,12 @@ except ImportError as err:
     # available, or it won't import.
 
     if is_osx():
-        print "Warning: Import of FoundationPlist failed:", err
-        print "See README for information on this issue."
+        print("Warning: Import of FoundationPlist failed:", err)
+        print("See README for information on this issue.")
     import plistlib
 
 class KJSSPrefs(jss.JSSPrefs):
-    """ This is a subclass of the JSSPrefs class which stores passwords in 
+    """ This is a subclass of the JSSPrefs class which stores passwords in
         the system keychain, rather than in plaintext in a preference file.
     """
 
@@ -83,20 +86,20 @@ class KJSSPrefs(jss.JSSPrefs):
                 raise JSSPrefsMissingFileError("Preferences file not found!")
             else:
                 jss.JSSPrefs.__init__(self, preferences_file=self.preferences_file)   # pylint: disable=non-parent-init-called
-                
+
     def configure(self):
         """Prompt user for config and write to plist
 
         Uses preferences_file argument from JSSPrefs.__init__ as path
         to write.
         """
-        _get_user_input = jss.jss_prefs._get_user_input # pylint: disable=protected-access 
+        _get_user_input = jss.jss_prefs._get_user_input # pylint: disable=protected-access
         root = ElementTree.Element("dict")
-        print ("It seems like you do not have a preferences file configured. "
+        print(("It seems like you do not have a preferences file configured. "
                "Please answer the following questions to generate a plist at "
-               "%s for use with python-jss." % self.preferences_file)
+               "%s for use with python-jss.") % self.preferences_file)
 
-        self.url = jss.jss_prefs._get_user_input(  # pylint: disable=protected-access 
+        self.url = jss.jss_prefs._get_user_input(  # pylint: disable=protected-access
             "The complete URL to your JSS, with port (e.g. "
             "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root)
 
@@ -106,8 +109,8 @@ class KJSSPrefs(jss.JSSPrefs):
 
         store_creds_in_keychain(self.url, self.user, self.password)
 
-        print ("Password for jss %s has been stored"
-               "in the system keychain") % self.url
+        print(("Password for jss %s has been stored"
+               "in the system keychain") % self.url)
 
         verify_prompt = ("Do you want to verify that traffic is encrypted by "
                          "a certificate that you trust?: (Y|N) ")
@@ -117,7 +120,7 @@ class KJSSPrefs(jss.JSSPrefs):
         self._handle_repos(root)
 
         self._write_plist(root)
-        print "Preferences created.\n"
+        print("Preferences created.\n")
 
     def parse_plist(self, preferences_file):
         """Try to reset preferences from preference_file."""
@@ -143,13 +146,13 @@ class KJSSPrefs(jss.JSSPrefs):
         self.user = prefs.get("jss_user")
         self.url = prefs.get("jss_url")
 
-        self.plain_password = prefs.get("jss_pass")
+        plain_password = prefs.get("jss_pass")
 
         # Previous versions might have left a plaintext password in
         # a preferences file. Offer to move it to the keychain and
         # bail if the user refuses: this is, after all, the 'K'JSSPrefs
         # class.
-        if self.url and self.user and self.plain_password:
+        if self.url and self.user and plain_password:
             answer = None
             question = ("Warning: we found a plaintext password in the "
                         "prefs file, and you didn't specify '--no-keychain'.\n"
@@ -158,26 +161,26 @@ class KJSSPrefs(jss.JSSPrefs):
                         "This is almost certainly a good idea unless you really "
                         "know what you are doing, and just forgot the --no-keychain "
                         "flag.\n")
-            print question
+            print(question)
 
             while answer not in ['y', 'n']:
-                answer = raw_input('Do you want to move the password out of the plist file? (y|n)')
-                
-            if answer is 'y':
-                store_creds_in_keychain(self.url, self.user, self.plain_password)
+                answer = input('Do you want to move the password out of the plist file? (y|n)')
+
+            if answer == 'y':
+                store_creds_in_keychain(self.url, self.user, plain_password)
                 prefs.pop("jss_pass")
                 self.write_plist_from_dict(prefs)
-                print "Password moved into keychain"
-                
+                print("Password moved into keychain")
+
             else:
-                print ("OK, on your own head be it.\n"
+                print(("OK, on your own head be it.\n"
                        "You can use the --no-keychain flag to continue with "
-                       "the plaintext password.")
+                       "the plaintext password."))
                 raise JSSError("Plaintext password without --no-keychain")
 
-        # This will throw an exception if the password is missing           
+        # This will throw an exception if the password is missing
         self.password = get_creds_from_keychain(self.url, self.user)
-        
+
         if not all([self.user, self.password, self.url]):
             raise JSSPrefsMissingKeyError("Some preferences are missing. Please "
                                           "delete %s and try again." % self.preferences_file)
@@ -193,7 +196,7 @@ class KJSSPrefs(jss.JSSPrefs):
     def write_plist_from_dict(self, prefs):
         """ Write the plist, using the values in the dict `prefs` """
         root = ElementTree.Element("dict")
-        
+
         for key_name in prefs.keys():
             val = prefs.get(key_name)
             ElementTree.SubElement(root, "key").text = key_name
@@ -203,16 +206,16 @@ class KJSSPrefs(jss.JSSPrefs):
             else:
                 ElementTree.SubElement(root, "string").text = val
         self._write_plist(root) # pylint: disable protected-access
-                
+
 
 def store_creds_in_keychain(service, user, pwd):
     """ Attempt to store the JSS credentials in the keychain """
     try:
         keyring.set_password(service, user, pwd)
     except keyring.errors.KeyringError as error:
-        print "Failed to store credentials in keychain: {}".format(error)
-        print "If you are running in a virtualenv, this is expected"
-        print "See: https://github.com/jaraco/keyring/issues/219"
+        print("Failed to store credentials in keychain: {}".format(error))
+        print("If you are running in a virtualenv, this is expected")
+        print("See: https://github.com/jaraco/keyring/issues/219")
         raise
 
 
@@ -221,9 +224,9 @@ def get_creds_from_keychain(service, user):
     try:
         result = keyring.get_password(service, user)
     except keyring.errors.KeyringError as error:
-        print "Failed to get credentials from keychain: {}".format(error)
-        print "If you are running in a virtualenv, this is expected"
-        print "See: https://github.com/jaraco/keyring/issues/219"
+        print("Failed to get credentials from keychain: {}".format(error))
+        print("If you are running in a virtualenv, this is expected")
+        print("See: https://github.com/jaraco/keyring/issues/219")
         raise
     if result:
         return result
