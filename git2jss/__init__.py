@@ -139,33 +139,41 @@ def main():
 
     # If '--jss-info' was requested, just give the information
     if options.jss_info:
-        print(("\n\nJSS: %s\n"
-               "Username: %s\n"
-               "File: %s\n\n") % (jss_prefs.url,
-                                  jss_prefs.user,
-                                  jss_prefs.preferences_file))
+        print_jss_info(jss_prefs)
         sys.exit(0)
-
 
     _repo = GitRepo(options.tag, create=options.create_tag)
 
     try:
-
         if options.push_all:
-            files = [x for x in os.listdir(".")
-                     if not re.match(r'^\.', x)
-                     and re.match(r'.*\.(sh|py|pl)$', x)]
+            files = list_matching_files(".", pattern=r'.*\.(sh|py|pl)$')
         else:
             files = [options.script_file]
 
         for script in files:
             process_script(script, options, _jss, _repo)
-
-    except:
-        print("Something went wrong.")
-        raise
     finally:
+        # Try to make sure the git repo tmpdir is
+        # cleaned up.
         _repo.__del__()
+
+
+def print_jss_info(jss_prefs):
+    """ Print info about the currrently configured JSS
+    """
+    print(("\nJSS: {}\n"
+           "Username: {}\n"
+           "File: {}\n").format(jss_prefs.url,
+                                jss_prefs.user,
+                                jss_prefs.preferences_file))
+
+def list_matching_files(directory, pattern=r'.*\.(sh|py|pl)$'):
+    """ Return a list of filenames in `directory`
+    which match `pattern` """
+    return [x for x in os.listdir(directory)
+            if not re.match(r'^\.', x)
+            and re.match(pattern, x)]
+
 
 def load_script(_jss, script_name):
     """ Load a script from the JSS and return a Script object """
