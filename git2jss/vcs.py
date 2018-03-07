@@ -28,30 +28,43 @@ class Git2JSSError(BaseException):
     """ Base git2jss exception """
     pass
 
+
 class TagNotFoundError(Git2JSSError):
     """ Tag wasn't found """
     pass
+
 
 class TooManyRemotesError(Git2JSSError):
     """ We can only handle one remote """
     pass
 
+
 class NoRemoteError(Git2JSSError):
     """ There needs to be at least one remote """
+
 
 class FileNotFoundError(Git2JSSError):
     """ File Not Found """
     pass
 
+
 class GitRepo(object):
     """ Provides helper methods to interact with Git """
 
-    def __init__(self, tag, create=False):
+    def __init__(self, tag, create=False, sourcedir='.'):
         """ Create a GitRepo object which represents the
-        repository at state `tag`
+        remote repository at state `tag`
+
+        Optionally, create tag `tag` and push it to the remote
+        repository before instantiation.
+
+        Use local repository `sourcedir` as the basis
+        for working out where the Git remote is located
+        (defaults to ".")
         """
 
         self.tag = tag
+        self.sourcedir = sourcedir
         self.remote_name = self._find_remote_name()
         self.remote_url = self._find_remote_url()
 
@@ -66,8 +79,7 @@ class GitRepo(object):
                                        .format(self.tag))
             else:
                 self.create_tag()
-                self.__init__(tag) #pylint: disable=non-parent-init-called
-
+                self.__init__(tag)  # pylint: disable=non-parent-init-called
 
     def __del__(self):
         """ Called when there are 0 references left to this
@@ -82,13 +94,14 @@ class GitRepo(object):
             print("Cleaning up tmpdir {}".format(self.tmp_dir))
             shutil.rmtree(self.tmp_dir)
 
-
-    def _find_remote_name(self): #pylint: disable=R0201
-        """ Set the name of the current git remote.
+    def _find_remote_name(self):
+        """ Find the name of the current git remote configured
+        for local repository `directory`.
         Repositories with more than 1 remote are not
         currently supported.
         """
-        remotes = subprocess.check_output(['git', 'remote']).strip().split('\n')
+        remotes = subprocess.check_output(['git', 'remote'],
+                                          cwd=self.sourcedir).strip().split('\n')
 
         if len(remotes) > 1:
             raise TooManyRemotesError(
@@ -98,7 +111,6 @@ class GitRepo(object):
 
         return remotes[0]
 
-
     def _find_remote_url(self):
         """ Divine the URL of our git remote, using the
         name in self.remote_name
@@ -107,13 +119,12 @@ class GitRepo(object):
 
         _url = subprocess.check_output(["git", "config", "--get",
                                         "remote." + self.remote_name +
-                                        ".url"]).strip()
+                                        ".url"], cwd=self.sourcedir).strip()
         # Normalise URL to not end with '.git'
         if re.search(r'\.git$', _url):
             _url = _url[:-4]
 
         return _url
-
 
     def _clone_to_tmp(self):
         """ Check out a fresh copy of the `tag` we are going to operate on
@@ -127,20 +138,19 @@ class GitRepo(object):
                                   stderr=subprocess.STDOUT,
                                   stdout=fnull)
         except subprocess.CalledProcessError:
-            raise Git2JSSError("Couldn't check out tag %s: are you sure it exists?" % self.tag)
+            raise Git2JSSError(
+                "Couldn't check out tag %s: are you sure it exists?" % self.tag)
         else:
             return True
-
 
     def create_tag(self, msg='Tagged by Git2jss'):
         """ Create tag and push to git remote """
         subprocess.check_call(['git', 'tag', '-a', self.tag, '-m', msg])
-        # subprocess.check_call(['git', 'push', 'origin', self.tag])
+        subprocess.check_call(['git', 'push', 'origin', self.tag])
         print("Tag {} pushed to got remote".format(self.tag))
 
-
     def file_info(self, filename):
-        """ Load information about ourself """
+        """ Return a dict of information about `filename` """
         if self.has_file(filename):
             git_info = {}
             git_info['VERSION'] = self.tag
