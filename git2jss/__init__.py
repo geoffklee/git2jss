@@ -175,15 +175,19 @@ def list_matching_files(directory, pattern=r'.*\.(sh|py|pl)$'):
             and re.match(pattern, x)]
 
 
-def load_script(_jss, script_name):
-    """ Load a script from the JSS and return a Script object """
+def load_jssobj(_jss, name, obj_type):
+    """ Load object `name` of type `type` from the
+    JSS and return it
+    """
     try:
-        jss_script = _jss.Script(script_name)
+        # Calls _jss.'obj_type'(): eg _jss.Script()
+        jss_script = getattr(_jss, obj_type)(name)
     except:
         raise
     else:
-        print("Loaded %s from the JSS" % script_name)
+        print("Loaded %s from the JSS" % name)
         return jss_script
+
 
 def process_script(script, options, _jss, _repo):
     """ Load the script from the JSS, insert the new
@@ -196,7 +200,7 @@ def process_script(script, options, _jss, _repo):
         jss_name = options.script_name
     try:
         print("Loading %s" % jss_name)
-        jss_script = load_script(_jss, jss_name)
+        jss_script = load_jssobj(_jss, jss_name, 'Script')
     except jss.exceptions.JSSGetError:
         print("Skipping %s: couldn't load it from the JSS" % jss_name)
         return
