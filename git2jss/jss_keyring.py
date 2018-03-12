@@ -42,6 +42,7 @@ except ImportError as err:
         print("See README for information on this issue.")
     import plistlib
 
+
 class KJSSPrefs(jss.JSSPrefs):
     """ This is a subclass of the JSSPrefs class which stores passwords in
         the system keychain, rather than in plaintext in a preference file.
@@ -85,7 +86,8 @@ class KJSSPrefs(jss.JSSPrefs):
             if not os.path.exists(self.preferences_file):
                 raise JSSPrefsMissingFileError("Preferences file not found!")
             else:
-                jss.JSSPrefs.__init__(self, preferences_file=self.preferences_file)   # pylint: disable=non-parent-init-called
+                jss.JSSPrefs.__init__(
+                    self, preferences_file=self.preferences_file)   # pylint: disable=non-parent-init-called
 
     def configure(self):
         """Prompt user for config and write to plist
@@ -93,7 +95,7 @@ class KJSSPrefs(jss.JSSPrefs):
         Uses preferences_file argument from JSSPrefs.__init__ as path
         to write.
         """
-        _get_user_input = jss.jss_prefs._get_user_input # pylint: disable=protected-access
+        _get_user_input = jss.jss_prefs._get_user_input  # pylint: disable=protected-access
         root = ElementTree.Element("dict")
         print(("It seems like you do not have a preferences file configured. "
                "Please answer the following questions to generate a plist at "
@@ -101,7 +103,7 @@ class KJSSPrefs(jss.JSSPrefs):
 
         self.url = jss.jss_prefs._get_user_input(  # pylint: disable=protected-access
             "The complete URL to your JSS, with port (e.g. "
-            "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root)
+            "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root).decode('utf-8')
 
         self.user = _get_user_input("API Username: ", "jss_user", root)
 
@@ -143,10 +145,10 @@ class KJSSPrefs(jss.JSSPrefs):
 
         self.preferences_file = preferences_file
 
-        self.user = prefs.get("jss_user")
+        self.user = prefs.get("jss_user").encode('utf-8')
         self.url = prefs.get("jss_url")
 
-        plain_password = prefs.get("jss_pass")
+        plain_password = prefs.get("jss_pass").encode('utf-8')
 
         # Previous versions might have left a plaintext password in
         # a preferences file. Offer to move it to the keychain and
@@ -164,7 +166,8 @@ class KJSSPrefs(jss.JSSPrefs):
             print(question)
 
             while answer not in ['y', 'n']:
-                answer = input('Do you want to move the password out of the plist file? (y|n)')
+                answer = input(
+                    'Do you want to move the password out of the plist file? (y|n)')
 
             if answer == 'y':
                 store_creds_in_keychain(self.url, self.user, plain_password)
@@ -179,7 +182,9 @@ class KJSSPrefs(jss.JSSPrefs):
                 raise JSSError("Plaintext password without --no-keychain")
 
         # This will throw an exception if the password is missing
-        self.password = get_creds_from_keychain(self.url, self.user)
+        self.password = get_creds_from_keychain(self.url, self.user).encode('utf-8')
+        
+        print("TYPE OF PASSWORD: {}".format(type(self.password)))
 
         if not all([self.user, self.password, self.url]):
             raise JSSPrefsMissingKeyError("Some preferences are missing. Please "
@@ -205,13 +210,13 @@ class KJSSPrefs(jss.JSSPrefs):
                 ElementTree.SubElement(root, string_val)
             else:
                 ElementTree.SubElement(root, "string").text = val
-        self._write_plist(root) # pylint: disable protected-access
+        self._write_plist(root)  # pylint: disable protected-access
 
 
 def store_creds_in_keychain(service, user, pwd):
     """ Attempt to store the JSS credentials in the keychain """
     try:
-        keyring.set_password(service, user, pwd)
+        keyring.set_password(service, user.decode('utf-8'), pwd.decode('utf-8'))
     except keyring.errors.KeyringError as error:
         print("Failed to store credentials in keychain: {}".format(error))
         print("If you are running in a virtualenv, this is expected")
@@ -232,4 +237,4 @@ def get_creds_from_keychain(service, user):
         return result
     else:
         raise keyring.errors.KeyringError(("Couldn't find a password in the keychain for\n"
-                                           "%s on %s"  % (user, service)))
+                                           "%s on %s" % (user, service)))
