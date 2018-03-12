@@ -175,7 +175,7 @@ def list_matching_files(directory, pattern=r'.*\.(sh|py|pl)$'):
             and re.match(pattern, x)]
 
 
-def load_jssobj(_jss, name, obj_type):
+def load_jssobject(_jss, name, obj_type):
     """ Load object `name` of type `type` from the
     JSS and return it
     """
@@ -200,14 +200,14 @@ def process_script(script, options, _jss, _repo):
         jss_name = options.script_name
     try:
         print("Loading %s" % jss_name)
-        jss_script = load_jssobj(_jss, jss_name, 'Script')
+        jss_script = load_jssobject(_jss, jss_name, 'Script')
     except jss.exceptions.JSSGetError:
         print("Skipping %s: couldn't load it from the JSS" % jss_name)
         return
 
     script_info = _repo.file_info(script)
     update_script(jss_script, script, script_info, _repo)
-    save_script(jss_script)
+    save_jssobject(jss_script)
 
 
 def update_script(jss_script, script_file, script_info, _repo, should_template=True):
@@ -258,15 +258,16 @@ def template_script(handle, script_info):
     return out
 
 
-def save_script(jss_script):
+def save_jssobject(jss_object):
     """ Save jss_script to the JSS """
     try:
-        jss_script.save()
+        jss_object.save()
     except:
-        print("Failed to save the script to the jss")
+        print("Failed to save {} to the jss"
+              .format(jss_object.find('name').text))
         raise
     else:
-        print("Saved %s to the JSS." % jss_script.find('name').text)
+        print("Saved %s to the JSS." % jss_object.find('name').text)
         return True
 
 
