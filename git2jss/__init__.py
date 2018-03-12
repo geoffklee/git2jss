@@ -61,7 +61,7 @@ class Git2JSSError(BaseException):
     """ Generic error class for this script """
     pass
 
-def _get_args():
+def _get_args(argv=None):
     """ Parse arguments from the commandline and return something sensible """
 
     parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [--create] '
@@ -98,7 +98,7 @@ def _get_args():
                              help=('Push every file in the current directory which has '
                                    'a matching script object on the JSS'))
 
-    options = parser.parse_args()
+    options = parser.parse_args(argv)
 
     # --name doesn't make any sense with --all, but argparse won't
     # let us express that with groups, so add in a hacky check here
@@ -117,9 +117,9 @@ def _get_args():
 
     return options
 
-def main():
+def main(argv=None):
     """ Main function """
-    options = _get_args()
+    options = _get_args(argv)
 
     if jss.tools.is_osx():
         prefs_file = os.path.join('~', 'Library', 'Preferences',
