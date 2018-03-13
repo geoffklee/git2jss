@@ -117,16 +117,11 @@ def _get_args(argv=None):
 
     return options
 
-def main(argv=None):
+def main(argv=None, prefs_file=None):
     """ Main function """
     options = _get_args(argv)
 
-    if jss.tools.is_osx():
-        prefs_file = os.path.join('~', 'Library', 'Preferences',
-                                  'com.github.gkluoe.git2jss.plist')
-    elif jss.tools.is_linux():
-        prefs_file = os.path.join("~", "." + 'com.github.gkluoe.git2jss.plist')
-
+    prefs_file = prefs_file or find_prefs_file()
 
     if options.no_keychain:
         jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
@@ -157,6 +152,15 @@ def main(argv=None):
         # cleaned up.
         _repo.__del__()
 
+def find_prefs_file():
+    """ Return the platform-specific location of our prefs file """
+    if jss.tools.is_osx():
+        prefs_file = os.path.join('~', 'Library', 'Preferences',
+                                  'com.github.gkluoe.git2jss.plist')
+    elif jss.tools.is_linux():
+        prefs_file = os.path.join("~", "." + 'com.github.gkluoe.git2jss.plist')
+
+    return prefs_file
 
 def print_jss_info(jss_prefs):
     """ Print info about the currrently configured JSS
