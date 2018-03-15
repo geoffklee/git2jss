@@ -103,7 +103,7 @@ class KJSSPrefs(jss.JSSPrefs):
 
         self.url = jss.jss_prefs._get_user_input(  # pylint: disable=protected-access
             "The complete URL to your JSS, with port (e.g. "
-            "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root).decode('utf-8')
+            "'https://mycasperserver.org:8443')\nURL: ", "jss_url", root)
 
         self.user = _get_user_input("API Username: ", "jss_user", root)
 
@@ -145,10 +145,10 @@ class KJSSPrefs(jss.JSSPrefs):
 
         self.preferences_file = preferences_file
 
-        self.user = prefs.get("jss_user").encode('utf-8')
+        self.user = prefs.get("jss_user")
         self.url = prefs.get("jss_url")
 
-        plain_password = prefs.get("jss_pass").encode('utf-8')
+        plain_password = prefs.get("jss_pass")
 
         # Previous versions might have left a plaintext password in
         # a preferences file. Offer to move it to the keychain and
@@ -182,10 +182,8 @@ class KJSSPrefs(jss.JSSPrefs):
                 raise JSSError("Plaintext password without --no-keychain")
 
         # This will throw an exception if the password is missing
-        self.password = get_creds_from_keychain(self.url, self.user).encode('utf-8')
+        self.password = get_creds_from_keychain(self.url, self.user)
         
-        print("TYPE OF PASSWORD: {}".format(type(self.password)))
-
         if not all([self.user, self.password, self.url]):
             raise JSSPrefsMissingKeyError("Some preferences are missing. Please "
                                           "delete %s and try again." % self.preferences_file)
@@ -216,7 +214,7 @@ class KJSSPrefs(jss.JSSPrefs):
 def store_creds_in_keychain(service, user, pwd):
     """ Attempt to store the JSS credentials in the keychain """
     try:
-        keyring.set_password(service, user.decode('utf-8'), pwd.decode('utf-8'))
+        keyring.set_password(service, user, pwd)
     except keyring.errors.KeyringError as error:
         print("Failed to store credentials in keychain: {}".format(error))
         print("If you are running in a virtualenv, this is expected")
