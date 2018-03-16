@@ -114,7 +114,7 @@ class GitRepo(object):
         if len(remotes) > 1:
             raise TooManyRemotesError(
                 "Don't know how to handle more than 1 remote: {}".format(remotes))
-        elif len(remotes) <= 1:
+        elif len(remotes) < 1 or remotes[0] == '':
             raise NoRemoteError("No Git remote is configured")
 
         return remotes[0]
