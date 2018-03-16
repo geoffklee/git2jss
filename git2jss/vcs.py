@@ -141,13 +141,11 @@ class GitRepo(object):
         try:
             print("git remote: {}".format(self.remote_url))
             fnull = open(os.devnull, 'w')
-            subprocess.check_call(["git", "clone", "-q", "--branch",
-                                   self.tag, self.remote_url + ".git", self.tmp_dir],
-                                  stderr=subprocess.STDOUT,
-                                  stdout=fnull)
-        except subprocess.CalledProcessError:
+            subprocess.check_output(["git", "clone", "-q", "--branch",
+                                   self.tag, self.remote_url + ".git", self.tmp_dir]), 
+        except subprocess.CalledProcessError as err:
             raise Git2JSSError(
-                "Couldn't check out tag %s: are you sure it exists?" % self.tag)
+                "Couldn't check out tag %s: are you sure it exists?\n%s" % (self.tag, err.output))
         else:
             return True
 
