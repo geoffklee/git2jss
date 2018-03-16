@@ -47,6 +47,9 @@ class FileNotFoundError(Git2JSSError):
     """ File Not Found """
     pass
 
+class NotAGitRepoError(Git2JSSError):
+    """ Dir is not a git repo """
+    pass
 
 class GitRepo(object):
     """ Provides helper methods to interact with Git """
@@ -65,14 +68,19 @@ class GitRepo(object):
 
         self.tag = tag
         self.sourcedir = sourcedir
-        self.remote_name = self._find_remote_name()
-        self.remote_url = self._find_remote_url()
-
         self.tmp_dir = tempfile.mkdtemp()
+
+        try:
+            self.remote_name = self._find_remote_name()
+
+        except subprocess.CalledProcessError as err:
+            if err.output.find('Not a git repository'):
+                raise NotAGitRepoError(err.output)
+     
+        self.remote_url = self._find_remote_url()
 
         if self.has_tag_on_remote():
             self._clone_to_tmp()
-
         else:
             if not create:
                 raise TagNotFoundError("tag doesn't exist on git remote: {}"
@@ -106,7 +114,7 @@ class GitRepo(object):
         if len(remotes) > 1:
             raise TooManyRemotesError(
                 "Don't know how to handle more than 1 remote: {}".format(remotes))
-        elif len(remotes) < 1:
+        elif len(remotes) <= 1:
             raise NoRemoteError("No Git remote is configured")
 
         return remotes[0]
