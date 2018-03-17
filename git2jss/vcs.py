@@ -143,8 +143,7 @@ class GitRepo(object):
 
         print("git remote: {}".format(self.remote_url))
         subprocess.check_call(["git", "clone", "-q", "--branch",
-                                self.tag, self.remote_url + ".git", self.tmp_dir])
-
+                               self.tag, self.remote_url + ".git", self.tmp_dir])
 
     def create_tag(self, msg='Tagged by Git2jss'):
         """ Create tag and push to git remote """
@@ -157,15 +156,15 @@ class GitRepo(object):
     def file_info(self, filename):
         """ Return a dict of information about `filename` """
         if self.has_file(filename):
-            git_info={}
-            git_info['VERSION']=self.tag
-            git_info['ORIGIN']=self.remote_url
-            git_info['PATH']=filename
-            git_info['DATE']=subprocess.check_output(["git", "log",
+            git_info = {}
+            git_info['VERSION'] = self.tag
+            git_info['ORIGIN'] = self.remote_url
+            git_info['PATH'] = filename
+            git_info['DATE'] = subprocess.check_output(["git", "log",
                                                         "-1", '--format="%ad"',
                                                         filename], cwd=self.tmp_dir).strip()
             # git_info['USER'] = jss_prefs.user
-            git_info['LOG']=subprocess.check_output(["git", "log",
+            git_info['LOG'] = subprocess.check_output(["git", "log",
                                                        '--format=%h - %cD %ce: %n %s%n',
                                                        filename], cwd=self.tmp_dir).strip()
             return git_info
@@ -177,7 +176,7 @@ class GitRepo(object):
         """ Return absolute path to `filename` inside
         our temporary directory
         """
-        path=os.path.join(self.tmp_dir, filename)
+        path = os.path.join(self.tmp_dir, filename)
         if self.has_file(filename):
             return os.path.abspath(path)
         else:
@@ -188,13 +187,13 @@ class GitRepo(object):
         """ Return True if `filename` exists in this
         repo at this tag version, False of not
         """
-        path=os.path.join(self.tmp_dir, filename)
+        path = os.path.join(self.tmp_dir, filename)
         return os.path.isfile(os.path.abspath(path))
 
     def get_file(self, filename):
         """ Return an open file handle to `filename`
         """
-        handle=io.open(self.path_to_file(filename), 'r', encoding="utf-8")
+        handle = io.open(self.path_to_file(filename), 'r', encoding="utf-8")
         return handle
 
     def has_tag_on_remote(self):
@@ -202,11 +201,11 @@ class GitRepo(object):
         return True or false.
         """
         # Get tags from the git remote
-        taglist=subprocess.check_output(['git', 'ls-remote', '--tags'],
+        taglist = subprocess.check_output(['git', 'ls-remote', '--tags'],
                                           cwd=self.sourcedir)
 
         # Parse into a list of tags that exist on the git remote
-        tags=[t.split('/')[-1:][0] for t in taglist.split('\n')]
+        tags = [t.split('/')[-1:][0] for t in taglist.split('\n')]
 
         # Does tag exist?
         return self.tag in tags
