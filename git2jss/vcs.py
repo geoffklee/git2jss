@@ -140,8 +140,7 @@ class GitRepo(object):
         """
         try:
             print("git remote: {}".format(self.remote_url))
-            fnull = open(os.devnull, 'w')
-            subprocess.check_output(["git", "clone", "-q", "--branch",
+            out = subprocess.check_output(["git", "clone", "-q", "--branch",
                                    self.tag, self.remote_url + ".git", self.tmp_dir]), 
         except subprocess.CalledProcessError as err:
             raise Git2JSSError(
@@ -180,7 +179,7 @@ class GitRepo(object):
         """
         path = os.path.join(self.tmp_dir, filename)
         if self.has_file(filename):
-            return path
+            return os.path.abspath(path)
         else:
             raise FileNotFoundError("Couldn't find file {} at tag {}"
                                     .format(filename, self.tag))
