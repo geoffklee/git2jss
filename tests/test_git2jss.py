@@ -37,7 +37,7 @@ def fixture_prefs_file_no_keychain(request):
         prefs_file = tempfile.mktemp()
         plistlib.writePlist(prefs_data, prefs_file)
 
-        def fin(): 
+        def fin():
             """ Delete temp file """
             print("Deleting temp prefs file")
             os.unlink(prefs_file)
@@ -64,7 +64,8 @@ def test_get_prefs_unicode(prefs_file_no_keychain):
                   "jss_user": u"ਫ ਬ ਭ 1 2 3",
                   "jss_pass": u"զ է ը թ 4 5 6"}
 
-    _check_prefs_values(prefs_file_no_keychain(prefs_data=prefs_data), prefs_data)
+    _check_prefs_values(prefs_file_no_keychain(
+        prefs_data=prefs_data), prefs_data)
 
 
 def test_get_prefs_ascii(prefs_file_no_keychain):
@@ -73,8 +74,8 @@ def test_get_prefs_ascii(prefs_file_no_keychain):
                   "jss_user": u"slartibartfarst",
                   "jss_pass": u"123blah456blah"}
 
-    _check_prefs_values(prefs_file_no_keychain(prefs_data=prefs_data), prefs_data)
-
+    _check_prefs_values(prefs_file_no_keychain(
+        prefs_data=prefs_data), prefs_data)
 
 
 def test_jss_info_no_keychain(prefs_file_no_keychain, capsys):
@@ -89,32 +90,31 @@ def test_jss_info_no_keychain(prefs_file_no_keychain, capsys):
             """JSS: https://some.domain.example.com/directory:port\nUsername: slartibartfarst""")
 
 
-
 def test_prefs_setup(capsys, monkeypatch):
     from functools import partial
-    import getpass  
+    import getpass
     import requests
-    
+
     def _make_multiple_inputs(inputs):
         """ provides a function to call for every input requested. """
         def next_input(_):
             """ provides the first item in the list. """
             return inputs.popleft()
         return next_input
-    
-    prefs_values = { "jss_url": u"https://git2jss.test.example.com/url:9999",
-                     "jss_user": u"liasufgoadsvbousyvboads8yvoasduvhybouvybasdouvybas",
-                     "jss_pass": u"ufygasiufygasdoufygasoufygaoduygasdoufyasdgouasydgfoa"}
+
+    prefs_values = {"jss_url": u"https://git2jss.test.example.com/url:9999",
+                    "jss_user": u"liasufgoadsvbousyvboads8yvoasduvhybouvybasdouvybas",
+                    "jss_pass": u"ufygasiufygasdoufygasoufygaoduygasdoufyasdgouasydgfoa"}
 
     # Patch the builtin raw_input, and the getpass.getpass funtcion to return
     # some values that we would expect a user to type.
     monkeypatch.setitem(__builtins__, 'raw_input', _make_multiple_inputs(
         deque([prefs_values['jss_url'], prefs_values['jss_user'], "N", "N", "N", "N", "N", "N", "N"])))
 
-    monkeypatch.setattr('getpass.getpass', lambda x: prefs_values['jss_pass'] )
+    monkeypatch.setattr('getpass.getpass', lambda x: prefs_values['jss_pass'])
 
     # The _get_user_input() function's default value has already mapped a variable to
-    # the unmodified version of raw_input, so we need to reload it at this point to give 
+    # the unmodified version of raw_input, so we need to reload it at this point to give
     # the function access to our patched version.
     reload(jss.jss_prefs)
 
@@ -122,26 +122,25 @@ def test_prefs_setup(capsys, monkeypatch):
     # and patching out this function avoids us attemoting to connect to the JSS.
     monkeypatch.setattr('jss.jss_prefs._handle_dist_server', lambda x, y: "")
 
-    
     # We also don't care about repositories
-    monkeypatch.setattr('git2jss.jss_keyring.KJSSPrefs._handle_repos', lambda x, y: "")
+    monkeypatch.setattr(
+        'git2jss.jss_keyring.KJSSPrefs._handle_repos', lambda x, y: "")
 
     # Now we can do stuff. Test that the preferences creation routine stores the
     # credentials and cam retrieve them from its prefs file.
-    prefs_file=tempfile.mktemp()
+    prefs_file = tempfile.mktemp()
     with pytest.raises(SystemExit):
         git2jss.main(argv=['--jss-info'], prefs_file=prefs_file)
-  
+
     out = capsys.readouterr()[0]
-    assert(out.find("JSS: {}".format(prefs_values['jss_url'])))
-    assert(out.find("Username: {}".format(prefs_values['jss_url'])))
-    assert(out.find("File: {}".format(prefs_file)))
+    assert out.find("JSS: {}".format(prefs_values['jss_url'])) 
+    assert out.find("Username: {}".format(prefs_values['jss_url'])) 
+    assert out.find("File: {}".format(prefs_file)) 
 
     # The password should have been stored in the system keychain:
     keychain_password = git2jss.jss_keyring.get_creds_from_keychain(prefs_values['jss_url'],
-                                                                  prefs_values['jss_user'])
+                                                                    prefs_values['jss_user'])
 
     assert(keychain_password == prefs_values['jss_pass'])
 
     os.unlink(prefs_file)
-    
