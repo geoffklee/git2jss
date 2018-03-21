@@ -57,16 +57,18 @@ EPILOG = """
 
 VERSION = "0.1.0"
 
+
 class Git2JSSError(BaseException):
     """ Generic error class for this script """
     pass
 
+
 def _get_args(argv=None):
     """ Parse arguments from the commandline and return something sensible """
 
-    parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [--create] '
-                                            '[ --no-keychain] [--all | --file FILE '
-                                            '[ --name NAME ] ] --tag TAG'),
+    parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [ --mode MODE ] '
+                                            '[--create]  [ --no-keychain] [--all | --file FILE '
+                                            '[ --name NAME ] ]  --tag TAG'),
                                      version=VERSION, description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -76,6 +78,13 @@ def _get_args(argv=None):
     parser.add_argument('--tag', metavar='TAG', type=str, default=False,
                         help=('Name of the TAG in Git. The tag must have been pushed to origin: '
                               'locally committed tags will not be accepted.'))
+
+    parser.add_argument('--mode', metavar='MODE', type=str, choices=['cea', 'script'],
+                        dest='mode', default='script',
+                        help=('Mode of operation. Can be \'script\', in which case all files '
+                              'operated on are assumed to be JSS scripts, or \'cea\', in which '
+                              'case all files operated on are assumed to be JSS Computer Extension '
+                              'Attributes.'))
 
     parser.add_argument('--name', metavar='NAME', dest='script_name', type=str,
                         help=('Name of the script object in the JSS (if omitted, it is assumed '
@@ -108,7 +117,8 @@ def _get_args(argv=None):
 
     # Unless we've only been asked for JSS info, we need a tag to do anything
     if not options.jss_info and not options.tag:
-        parser.error("Which tag do you want to push? Please specify with '--tag'")
+        parser.error(
+            "Which tag do you want to push? Please specify with '--tag'")
 
     # We need to know which files to operate on!
     if options.tag and not (options.script_file or options.push_all):
@@ -117,11 +127,14 @@ def _get_args(argv=None):
 
     return options
 
+
 def main(argv=None, prefs_file=None):
     """ Main function """
     options = _get_args(argv)
 
     prefs_file = prefs_file or find_prefs_file()
+
+    _mode = set_mode(options)
 
     if options.no_keychain:
         jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
@@ -152,6 +165,16 @@ def main(argv=None, prefs_file=None):
         # cleaned up.
         _repo.__del__()
 
+
+def set_mode(options):
+    """ Are we operating on CEAs or Scripts? """
+    options_map = {'script': 'Script',
+                   'cea': 'ComputerExtensionAttrbute'}
+    mode = options_map.get(options.mode)
+    print("Running in {} mode".format(mode))
+    return mode
+
+
 def find_prefs_file():
     """ Return the platform-specific location of our prefs file """
     if jss.tools.is_osx():
@@ -162,6 +185,7 @@ def find_prefs_file():
 
     return prefs_file
 
+
 def print_jss_info(jss_prefs):
     """ Print info about the currrently configured JSS
     """
@@ -170,6 +194,7 @@ def print_jss_info(jss_prefs):
            "File: {}\n").format(jss_prefs.url,
                                 jss_prefs.user,
                                 jss_prefs.preferences_file))
+
 
 def list_matching_files(directory, pattern=r'.*\.(sh|py|pl)$'):
     """ Return a list of filenames in `directory`
