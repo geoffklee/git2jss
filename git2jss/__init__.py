@@ -217,7 +217,7 @@ def load_jssobject(_jss, name, obj_type):
         return jss_script
 
 
-def process_source(script, options, _jss, _repo):
+def process_script(script, options, _jss, _repo):
     """ Load the script from the JSS, insert the new
     code and log messages, the re-upload to the JSS
     """
