@@ -86,34 +86,33 @@ def _get_args(argv=None):
                               'case all files operated on are assumed to be JSS Computer Extension '
                               'Attributes.'))
 
-    parser.add_argument('--name', metavar='NAME', dest='script_name', type=str,
-                        help=('Name of the script object in the JSS (if omitted, it is assumed '
-                              'that the script object has a name exactly matching FILE)'))
+    parser.add_argument('--name', metavar='NAME', dest='target_name', type=str,
+                        help=('Name of the target object in the JSS (if omitted, it is assumed '
+                              'that the target object has a name exactly matching FILE)'))
 
     parser.add_argument('--create', action='store_true', default=False, dest='create_tag',
                         help="If TAG doesn't exist, then create it and push to the server")
 
     parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
                         help=('Do not store authentication credentials in the system keychain.\n'
-                              'To use this option, you need to manually enter the password into '
-                              'the preferences file. You probably do not want to do this.'))
+                              'You probably do not want to use this option.'))
 
     file_or_all = parser.add_mutually_exclusive_group()
 
-    file_or_all.add_argument('--file', metavar='FILE', dest='script_file', type=str,
+    file_or_all.add_argument('--file', metavar='FILE', dest='source_file', type=str,
                              help='File containing the script to push to the JSS')
 
     file_or_all.add_argument('--all', action='store_true', default=False, dest='push_all',
-                             help=('Push every file in the current directory which has '
-                                   'a matching script object on the JSS'))
+                             help=('Push every file in the current directory for which there is an '
+                                   'object with a matching name in the JSS.'))
 
     options = parser.parse_args(argv)
 
     # --name doesn't make any sense with --all, but argparse won't
     # let us express that with groups, so add in a hacky check here
-    if options.push_all and options.script_name:
+    if options.push_all and options.target_name:
         print("WARNING: --all was specified so ignoring --name option")
-        options.script_name = None
+        options.target_name = None
 
     # Unless we've only been asked for JSS info, we need a tag to do anything
     if not options.jss_info and not options.tag:
@@ -121,7 +120,7 @@ def _get_args(argv=None):
             "Which tag do you want to push? Please specify with '--tag'")
 
     # We need to know which files to operate on!
-    if options.tag and not (options.script_file or options.push_all):
+    if options.tag and not (options.source_file or options.push_all):
         parser.error("You need to specify either a filename "
                      "(--file FILE) or all files (--all)")
 
@@ -156,7 +155,7 @@ def main(argv=None, prefs_file=None):
         if options.push_all:
             files = list_matching_files(".", pattern=r'.*\.(sh|py|pl)$')
         else:
-            files = [options.script_file]
+            files = [options.source_file]
 
         for script in files:
             process_script(script, options, _jss, _repo)
@@ -218,15 +217,15 @@ def load_jssobject(_jss, name, obj_type):
         return jss_script
 
 
-def process_script(script, options, _jss, _repo):
+def process_source(script, options, _jss, _repo):
     """ Load the script from the JSS, insert the new
     code and log messages, the re-upload to the JSS
     """
-    if not options.script_name:
+    if not options.target_name:
         print("No name specified, assuming %s" % script)
         jss_name = script
     else:
-        jss_name = options.script_name
+        jss_name = options.target_name
     try:
         print("Loading %s" % jss_name)
         jss_script = load_jssobject(_jss, jss_name, 'Script')
@@ -239,7 +238,7 @@ def process_script(script, options, _jss, _repo):
     save_jssobject(jss_script)
 
 
-def update_script(jss_script, script_file, script_info, _repo, should_template=True):
+def update_script(jss_script, source_file, script_info, _repo, should_template=True):
     """ Update the notes field to contain the git log,
         and, if requested, template the script
     """
@@ -247,9 +246,9 @@ def update_script(jss_script, script_file, script_info, _repo, should_template=T
     jss_script.find('notes').text = script_info['LOG']
 
     # Update the script - we need to write a base64 encoded version
-    # of the contents of script_file into the 'script_contents_encoded'
+    # of the contents of source_file into the 'script_contents_encoded'
     # element of the script object
-    handle = _repo.get_file(script_file)
+    handle = _repo.get_file(source_file)
     if should_template:
         print("Templating script...")
         jss_script.find('script_contents_encoded').text = b64encode(
