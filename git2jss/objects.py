@@ -5,7 +5,8 @@ from string import Template
 import jss
 import git2jss
 
-class TargetNotFoundError(git2jss.Git2JSSError):
+
+class TargetNotFoundError(BaseException):
     """ Target wasn't found """
     pass
 
@@ -22,17 +23,17 @@ class JSSObject(object):
     target_object = None
 
 
-    def __init__(self, repo, _jss, filename, target=None, target_type='Script'):
+    def __init__(self, repo, _jss, source_file, target=None, target_type='Script'):
         """ Load source file from the vcs and
         target object from the JSS
 
         `repo` should be a repo from the vcs module
         `jss` should be a JSS object
-        `filename` should be the name of the source file
+        `source_file` should be the name of the source file
         """
 
-        self.source_name = filename
-        self.target_name = target or filename
+        self.source_name = source_file
+        self.target_name = target or source_file
         self.target_type = target_type
         self.repo = repo
         self._jss = _jss
@@ -50,13 +51,15 @@ class JSSObject(object):
             self.target_object = jss_method(self.target_name)
         except jss.JSSGetError as err:
             if err.message.find('404'):
-                raise TargetNotFoundError(
-                    "Couldn't find target {} of type {} on the JSS"
-                    .format(self.target_name, self.target_type))
+                raise
+                #raise TargetNotFoundError(
+                #    "Couldn't find target {} of type {} on the JSS"
+                #    .format(self.target_name, self.target_type))
             else:
                 raise
         else:
             print("Loaded {} from the JSS".format(self.target_name))
+
 
     def _load_source_file(self):
         """ Load the source file from the VCS
@@ -69,11 +72,13 @@ class JSSObject(object):
             print ("Loaded {} from version control".format(self.source_name))
 
 
+
     def update(self, should_template):
         """ Stub method which should be overriden for
         different types of object which subclass this one
         """
         pass
+
 
     def save(self):
         """ Write the object back to the JSS
@@ -84,6 +89,8 @@ class JSSObject(object):
             raise
         else:
             print("Saved {} to the jss".format(self.target_name))
+
+
 
 
 class JSSScript(JSSObject):
@@ -101,7 +108,7 @@ class JSSScript(JSSObject):
             and, if requested, template the script
         """
 
-        script_info = self.repo.file_info(self.source_file)
+        script_info = self.repo.file_info(self.source_name)
 
         # Add log to the notes field
         self.target_object.find('notes').text = script_info['LOG']

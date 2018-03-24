@@ -29,6 +29,7 @@ from base64 import b64encode
 import jss
 from .jss_keyring import KJSSPrefs
 from .vcs import GitRepo
+import git2jss.objects as objects
 
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
@@ -156,9 +157,13 @@ def main(argv=None, prefs_file=None):
             files = list_matching_files(".", pattern=r'.*\.(sh|py|pl)$')
         else:
             files = [options.source_file]
-
-        for script in files:
-            process_script(script, options, _jss, _repo)
+        for this_file in files:
+            target_class = getattr(objects, _mode) # Instantiate
+            target = target_class(repo=_repo, _jss=_jss, 
+                                  source_file=this_file, 
+                                  target=options.target_name)
+            target.update()
+            target.save()         
     finally:
         # Try to make sure the git repo tmpdir is
         # cleaned up.
@@ -167,8 +172,8 @@ def main(argv=None, prefs_file=None):
 
 def set_mode(options):
     """ Are we operating on CEAs or Scripts? """
-    options_map = {'script': 'Script',
-                   'cea': 'ComputerExtensionAttrbute'}
+    options_map = {'script': 'JSSScript',
+                   'cea': 'JSSComputerExtensionAttrbute'}
     mode = options_map.get(options.mode)
     print("Running in {} mode".format(mode))
     return mode
@@ -201,102 +206,6 @@ def list_matching_files(directory, pattern=r'.*\.(sh|py|pl)$'):
     return [x for x in os.listdir(directory)
             if not re.match(r'^\.', x)
             and re.match(pattern, x)]
-
-
-def load_jssobject(_jss, name, obj_type):
-    """ Load object `name` of type `type` from the
-    JSS and return it
-    """
-    try:
-        # Calls _jss.'obj_type'(): eg _jss.Script()
-        jss_script = getattr(_jss, obj_type)(name)
-    except:
-        raise
-    else:
-        print("Loaded %s from the JSS" % name)
-        return jss_script
-
-
-def process_script(script, options, _jss, _repo):
-    """ Load the script from the JSS, insert the new
-    code and log messages, the re-upload to the JSS
-    """
-    if not options.target_name:
-        print("No name specified, assuming %s" % script)
-        jss_name = script
-    else:
-        jss_name = options.target_name
-    try:
-        print("Loading %s" % jss_name)
-        jss_script = load_jssobject(_jss, jss_name, 'Script')
-    except jss.exceptions.JSSGetError:
-        print("Skipping %s: couldn't load it from the JSS" % jss_name)
-        return
-
-    script_info = _repo.file_info(script)
-    update_script(jss_script, script, script_info, _repo)
-    save_jssobject(jss_script)
-
-
-def update_script(jss_script, source_file, script_info, _repo, should_template=True):
-    """ Update the notes field to contain the git log,
-        and, if requested, template the script
-    """
-    # Add log to the script_info
-    jss_script.find('notes').text = script_info['LOG']
-
-    # Update the script - we need to write a base64 encoded version
-    # of the contents of source_file into the 'script_contents_encoded'
-    # element of the script object
-    handle = _repo.get_file(source_file)
-    if should_template:
-        print("Templating script...")
-        jss_script.find('script_contents_encoded').text = b64encode(
-            template_script(handle, script_info).encode('utf-8'))
-    else:
-        print("No templating requested.")
-        jss_script.find('script_contents_encoded').text = b64encode(
-            handle.read().encode('utf-8'))
-
-    # Only one of script_contents and script_contents_encoded should be sent
-    # so delete the one we are not using.
-    jss_script.remove(jss_script.find('script_contents'))
-
-
-def template_script(handle, script_info):
-    """ Template the script. Pass in an open
-        file handle and receive a string containing
-        the templated text. We use a custom delimiter to
-        reduce the risk of collisions
-    """
-
-    class JSSTemplate(Template):
-        """ Template subclass with a custom delimiter """
-        delimiter = '@@'
-
-    text = handle.read()
-    tmpl = JSSTemplate(text)
-    out = None
-    try:
-        out = tmpl.safe_substitute(script_info)
-    except:
-        print("Failed to template this script.")
-        raise
-
-    return out
-
-
-def save_jssobject(jss_object):
-    """ Save jss_script to the JSS """
-    try:
-        jss_object.save()
-    except:
-        print("Failed to save {} to the jss"
-              .format(jss_object.find('name').text))
-        raise
-    else:
-        print("Saved %s to the JSS." % jss_object.find('name').text)
-        return True
 
 
 if __name__ == "__main__":
