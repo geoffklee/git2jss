@@ -29,7 +29,8 @@ from base64 import b64encode
 import jss
 from .jss_keyring import KJSSPrefs
 from .vcs import GitRepo
-import git2jss.objects as objects
+from .exceptions import Git2JSSError
+import git2jss.processors as processors
 
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
@@ -57,11 +58,6 @@ EPILOG = """
 """
 
 VERSION = "0.1.0"
-
-
-class Git2JSSError(BaseException):
-    """ Generic error class for this script """
-    pass
 
 
 def _get_args(argv=None):
@@ -134,7 +130,7 @@ def main(argv=None, prefs_file=None):
 
     prefs_file = prefs_file or find_prefs_file()
 
-    _mode = set_mode(options)
+    target_type = set_mode(options)
 
     if options.no_keychain:
         jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
@@ -158,7 +154,7 @@ def main(argv=None, prefs_file=None):
         else:
             files = [options.source_file]
         for this_file in files:
-            target_class = getattr(objects, _mode) # Instantiate
+            target_class = getattr(processors, target_type) # Instantiate
             target = target_class(repo=_repo, _jss=_jss, 
                                   source_file=this_file, 
                                   target=options.target_name)
