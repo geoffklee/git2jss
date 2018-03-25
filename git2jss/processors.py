@@ -1,12 +1,11 @@
-""" Various objects that we might sync with the JSS """
+""" Processors which take sync an object in the JSS
+with a copy in version control. """
 from __future__ import absolute_import, print_function
 from base64 import b64encode
 from string import Template
 import jss
-import git2jss
 
-
-class TargetNotFoundError(BaseException):
+class TargetNotFoundError(Exception):
     """ Target wasn't found """
     pass
 
@@ -21,7 +20,6 @@ class JSSObject(object):
     source_file = None
     target_name = None
     target_object = None
-
 
     def __init__(self, repo, _jss, source_file, target=None, target_type='Script'):
         """ Load source file from the vcs and
@@ -41,7 +39,6 @@ class JSSObject(object):
         self._load_target_object()
         self._load_source_file()
 
-
     def _load_target_object(self):
         """ Load the target pbject from the JSS
         """
@@ -50,16 +47,14 @@ class JSSObject(object):
             jss_method = getattr(self._jss, self.target_type)
             self.target_object = jss_method(self.target_name)
         except jss.JSSGetError as err:
-            if err.message.find('404'):
-                raise
-                #raise TargetNotFoundError(
-                #    "Couldn't find target {} of type {} on the JSS"
-                #    .format(self.target_name, self.target_type))
+            if err.status_code == 404:
+                raise TargetNotFoundError(
+                    "Couldn't find target {} of type {} on the JSS"
+                    .format(self.target_name, self.target_type))
             else:
                 raise
         else:
             print("Loaded {} from the JSS".format(self.target_name))
-
 
     def _load_source_file(self):
         """ Load the source file from the VCS
@@ -71,14 +66,11 @@ class JSSObject(object):
         else:
             print ("Loaded {} from version control".format(self.source_name))
 
-
-
     def update(self, should_template):
         """ Stub method which should be overriden for
         different types of object which subclass this one
         """
         pass
-
 
     def save(self):
         """ Write the object back to the JSS
@@ -91,8 +83,6 @@ class JSSObject(object):
             print("Saved {} to the jss".format(self.target_name))
 
 
-
-
 class JSSScript(JSSObject):
     """ A Script """
 
@@ -101,7 +91,6 @@ class JSSScript(JSSObject):
     def __init__(self, *args, **kwargs):
         kwargs['target_type'] = self.OBJECT_TYPE
         super(JSSScript, self).__init__(*args, **kwargs)
-
 
     def update(self, should_template=True):
         """ Update the notes field to contain the git log,
@@ -130,7 +119,6 @@ class JSSScript(JSSObject):
         self.target_object.remove(self.target_object.find('script_contents'))
 
 
-
 class JSSComputerExtensionAttribute(JSSObject):
     """ A ComputerExtensionAttribute """
 
@@ -140,8 +128,25 @@ class JSSComputerExtensionAttribute(JSSObject):
         kwargs['target_type'] = self.OBJECT_TYPE
         super(JSSComputerExtensionAttribute, self).__init__(*args, **kwargs)
 
+    def update(self, should_template=True):
+        """ Update the notes field to contain the git log,
+            and, if requested, template the script
+        """
+        info = self.repo.file_info(self.source_name)
 
+        # Add log to the description field
+        self.target_object.find('description').text = info['LOG']
 
+        # Template, or not, and save the result to the 'Mac'
+        # script section of the ComputerExtensionAttribute
+        if should_template:
+            print("Templating file...")
+            output = template_file(self.source_file, info)
+        else:
+            print("No templating requested.")
+            output = self.source_file.read()
+
+        self.target_object.find("input_type/[platform='Mac']/script").text = output
 
 
 def template_file(handle, script_info):
