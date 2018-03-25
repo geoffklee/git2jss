@@ -22,12 +22,7 @@ import shutil
 import re
 import os
 import io
-
-
-class Git2JSSError(BaseException):
-    """ Base git2jss exception """
-    pass
-
+from git2jss.exceptions import Git2JSSError
 
 class TagNotFoundError(Git2JSSError):
     """ Tag wasn't found """
@@ -99,10 +94,12 @@ class GitRepo(object):
         # we should be using a context manager but I don't know
         # how to make that work in this situation
 
-        # Clean up our temp dir
-        if os.path.exists(self.tmp_dir):
-            print("Cleaning up tmpdir {}".format(self.tmp_dir))
-            shutil.rmtree(self.tmp_dir)
+        # Clean up our temp dir, cheking whether things still
+        # exist first.
+        if os is not None and self.tmp_dir is not None:
+            if os.path.exists(self.tmp_dir):
+                print("Cleaning up tmpdir {}".format(self.tmp_dir))
+                shutil.rmtree(self.tmp_dir)
 
     def _find_remote_name(self):
         """ Find the name of the current git remote configured
@@ -152,6 +149,7 @@ class GitRepo(object):
         subprocess.check_call(['git', 'push', 'origin', self.tag],
                               cwd=self.tmp_dir)
         print("Tag {} pushed to git remote".format(self.tag))
+
 
     def file_info(self, filename):
         """ Return a dict of information about `filename` """
