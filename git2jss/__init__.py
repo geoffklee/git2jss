@@ -27,10 +27,11 @@ import shutil
 from string import Template
 from base64 import b64encode
 import jss
+import git2jss.processors as processors
 from .jss_keyring import KJSSPrefs
 from .vcs import GitRepo
 from .exceptions import Git2JSSError
-import git2jss.processors as processors
+
 
 
 DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
@@ -169,7 +170,7 @@ def main(argv=None, prefs_file=None):
 def set_mode(options):
     """ Are we operating on CEAs or Scripts? """
     options_map = {'script': 'JSSScript',
-                   'cea': 'JSSComputerExtensionAttrbute'}
+                   'cea': 'JSSComputerExtensionAttribute'}
     mode = options_map.get(options.mode)
     print("Running in {} mode".format(mode))
     return mode
