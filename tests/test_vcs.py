@@ -129,9 +129,7 @@ def test_get_file_info(gitrepo):
             'PATH': '{}'.format(filename),
             'DATE': '"Sat Mar 17 09:14:38 2018 +0000"',
             'VERSION': 'test-1.0.0',
-            'LOG': ('371a104 - Sat, 17 Mar 2018 09:14:38 +0000',
-                    ' noreply@github.com: \n Initial commit')}
-
+            'LOG': '371a104 - Sat, 17 Mar 2018 09:14:38 +0000 noreply@github.com: \n Initial commit'}
     assert gitrepo.file_info(filename) == info
 
 
