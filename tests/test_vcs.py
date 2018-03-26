@@ -5,6 +5,7 @@ import os
 import pytest
 from pytest import raises
 import git2jss.vcs as vcs
+import git2jss.exceptions as exceptions
 
 TEST_REPO = 'https://github.com/gkluoe/git2jss-test.git'
 
@@ -149,3 +150,11 @@ def test_get_file(gitrepo):
     assert isinstance(handle, io.TextIOWrapper)
     assert handle.read() == (u'# git2jss-test\nThis exists purely to test '
                              'https://github.com/gkluoe/git2jss\n')
+
+
+def test_error_during_checkout(gitrepo, tmpdir_factory):
+    """ Provoke a failure during checkout """
+    gitrepo.remote_url = 'https://www.example.com/blah'
+    gitrepo.tmp_dir = str(tmpdir_factory.mktemp('checkout_error'))
+    with raises(exceptions.Git2JSSError, match=".*repository 'https://www.example.com/blah.git/' not found"):
+        gitrepo._clone_to_tmp()

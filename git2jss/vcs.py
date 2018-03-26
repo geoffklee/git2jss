@@ -145,7 +145,7 @@ class GitRepo(object):
                                self.tmp_dir], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             # Don't know what happened!
-            raise Git2JSSError(output)
+            raise Git2JSSError(err.output)
         else:
             print("Checked out tag {}.".format(self.tag))
 
