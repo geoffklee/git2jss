@@ -135,12 +135,21 @@ class GitRepo(object):
 
     def _clone_to_tmp(self):
         """ Check out a fresh copy of the `tag` we are going to operate on
-            script_tag must be present on the git master
+            script_tag must be present on the git remote
         """
+        print("Git remote: {}".format(self.remote_url))
+        output = None
+        try:
+            output = subprocess.check_output(["git", "clone", "-q", "--branch",
+                               self.tag, self.remote_url + ".git", 
+                               self.tmp_dir], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as err:
+            # Don't know what happened!
+            raise Git2JSSError(output)
+        else:
+            print("Checked out tag {}.".format(self.tag))
 
-        print("git remote: {}".format(self.remote_url))
-        subprocess.check_call(["git", "clone", "-q", "--branch",
-                               self.tag, self.remote_url + ".git", self.tmp_dir])
+
 
     def create_tag(self, msg='Tagged by Git2jss'):
         """ Create tag and push to git remote """
