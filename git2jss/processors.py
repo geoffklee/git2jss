@@ -49,8 +49,8 @@ class JSSObject(object):
         except jss.JSSGetError as err:
             if err.status_code == 404:
                 raise TargetNotFoundError(
-                    "Couldn't find target {} of type {} on the JSS"
-                    .format(self.target_name, self.target_type))
+                    "Couldn't find a {} called '{}' on the JSS"
+                    .format(self.target_type, self.target_name))
             else:
                 raise
         else:

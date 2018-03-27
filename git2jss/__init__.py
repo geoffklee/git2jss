@@ -60,6 +60,13 @@ EPILOG = """
 
 VERSION = "0.1.0"
 
+PROCESSORS = {
+    # This dict describes a mapping between modes which
+    # can be given on the commandline, and the corresponding
+    # class in the `processors` module.
+    'script': 'JSSScript',
+    'cea': 'JSSComputerExtensionAttribute'
+}
 
 def _get_args(argv=None):
     """ Parse arguments from the commandline and return something sensible """
@@ -77,14 +84,14 @@ def _get_args(argv=None):
                         help=('Name of the TAG in Git. The tag must have been pushed to origin: '
                               'locally committed tags will not be accepted.'))
 
-    parser.add_argument('--mode', metavar='MODE', type=str, choices=['cea', 'script'],
+    parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS.keys(),
                         dest='mode', default='script',
                         help=('Mode of operation. Can be \'script\', in which case all files '
                               'operated on are assumed to be JSS scripts, or \'cea\', in which '
                               'case all files operated on are assumed to be JSS Computer Extension '
                               'Attributes.'))
 
-    parser.add_argument('--name', metavar='NAME', dest='target_name', type=str,
+    parser.add_argument('--name', metavar='NAME', dest='target_name', type=str, default=None,
                         help=('Name of the target object in the JSS (if omitted, it is assumed '
                               'that the target object has a name exactly matching FILE)'))
 
@@ -124,7 +131,6 @@ def _get_args(argv=None):
 
     return options
 
-
 def main(argv=None, prefs_file=None):
     """ Main function """
     options = _get_args(argv)
@@ -147,7 +153,7 @@ def main(argv=None, prefs_file=None):
         print_jss_info(jss_prefs)
         sys.exit(0)
 
-    _repo = GitRepo(options.tag, create=options.create_tag)
+    _repo = GitRepo(tag=options.tag, create=options.create_tag)
 
     try:
         if options.push_all:
@@ -155,23 +161,25 @@ def main(argv=None, prefs_file=None):
         else:
             files = [options.source_file]
         for this_file in files:
-            target_class = getattr(processors, target_type) # Instantiate
-            target = target_class(repo=_repo, _jss=_jss, 
+            # Work out which type of processor to use
+            processor_type = getattr(processors, target_type) 
+
+            # Instantiate the processor
+            processor = processor_type(repo=_repo, _jss=_jss, 
                                   source_file=this_file, 
                                   target=options.target_name)
-            target.update()
-            target.save()         
+
+            processor.update()
+            processor.save()         
     finally:
-        # Try to make sure the git repo tmpdir is
+        # Make sure the repo tmpdir is
         # cleaned up.
         _repo.__del__()
 
 
 def set_mode(options):
     """ Are we operating on CEAs or Scripts? """
-    options_map = {'script': 'JSSScript',
-                   'cea': 'JSSComputerExtensionAttribute'}
-    mode = options_map.get(options.mode)
+    mode = PROCESSORS[options.mode]
     print("Running in {} mode".format(mode))
     return mode
 
