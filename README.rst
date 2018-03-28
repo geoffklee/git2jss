@@ -66,7 +66,7 @@ You can use it on the commandine like this::
   # Export the file localscript.sh to a Script object on the JSS called do_something_great.sh
   # using the existing tag v0.0.9
   
-  $ git2jss --file localscript.sh --name do_something_great.sh --tag v0.9.9
+  $ git2jss --file localscript.sh --name do_something_great.sh --tag v0.0.9
 
   # Export the file check_firewall.sh to a ComputerExtensionAttribute object on the JSS called 
   # FirewallCheck, using the existing tag v0.0.9
