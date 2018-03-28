@@ -83,50 +83,52 @@ class JSSObject(object):
             print("Saved {} to the jss".format(self.target_name))
 
 
-class JSSScript(JSSObject):
+class Script(JSSObject):
     """ A Script """
 
     OBJECT_TYPE = "Script"
 
     def __init__(self, *args, **kwargs):
         kwargs['target_type'] = self.OBJECT_TYPE
-        super(JSSScript, self).__init__(*args, **kwargs)
+        super(Script, self).__init__(*args, **kwargs)
 
     def update(self, should_template=True):
         """ Update the notes field to contain the git log,
             and, if requested, template the script
         """
 
-        script_info = self.repo.file_info(self.source_name)
+        info = self.repo.file_info(self.source_name)
 
         # Add log to the notes field
-        self.target_object.find('notes').text = script_info['LOG']
+        self.target_object.find('notes').text = info['LOG']
 
         # Update the script - we need to write a base64 encoded version
-        # of the contents of source_file into the 'script_contents_encoded'
-        # element of the script object
+        # of the contents of the source file into the 'script_contents_encoded'
+        # element of the script object.
         if should_template:
             print("Templating file...")
             self.target_object.find('script_contents_encoded').text = b64encode(
-                template_file(self.source_file, script_info).encode('utf-8'))
+                template_file(self.source_file, 
+                              info, 
+                              USER=self._jss.user).encode('utf-8'))
         else:
             print("No templating requested.")
             self.target_object.find('script_contents_encoded').text = b64encode(
                 self.source_file.read().encode('utf-8'))
 
-        # Only one of script_contents and script_contents_encoded should be sent
-        # so delete the one we are not using.
+        # According to the JAMF Pro API, only one of script_contents and 
+        # script_contents_encoded should be sent, so delete the one we are not using.
         self.target_object.remove(self.target_object.find('script_contents'))
 
 
-class JSSComputerExtensionAttribute(JSSObject):
+class ComputerExtensionAttribute(JSSObject):
     """ A ComputerExtensionAttribute """
 
     OBJECT_TYPE = "ComputerExtensionAttribute"
 
     def __init__(self, *args, **kwargs):
         kwargs['target_type'] = self.OBJECT_TYPE
-        super(JSSComputerExtensionAttribute, self).__init__(*args, **kwargs)
+        super(ComputerExtensionAttribute, self).__init__(*args, **kwargs)
 
     def update(self, should_template=True):
         """ Update the notes field to contain the git log,
@@ -141,7 +143,8 @@ class JSSComputerExtensionAttribute(JSSObject):
         # script section of the ComputerExtensionAttribute
         if should_template:
             print("Templating file...")
-            output = template_file(self.source_file, info)
+            output = template_file(self.source_file, info, 
+                                   USER=self._jss.user)
         else:
             print("No templating requested.")
             output = self.source_file.read()
@@ -149,7 +152,7 @@ class JSSComputerExtensionAttribute(JSSObject):
         self.target_object.find("input_type/[platform='Mac']/script").text = output
 
 
-def template_file(handle, script_info):
+def template_file(handle, data, **kwargs):
     """ Template a file. Pass in an open
         file handle and receive a string containing
         the templated text. We use a custom delimiter to
@@ -164,7 +167,7 @@ def template_file(handle, script_info):
     tmpl = JSSTemplate(text)
     out = None
     try:
-        out = tmpl.safe_substitute(script_info)
+        out = tmpl.safe_substitute(data, **kwargs)
     except:
         print("Failed to template this script.")
         raise
