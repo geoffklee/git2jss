@@ -60,13 +60,9 @@ EPILOG = """
 
 VERSION = "0.1.0"
 
-PROCESSORS = {
-    # This dict describes a mapping between modes which
-    # can be given on the commandline, and the corresponding
-    # class in the `processors` module.
-    'script': 'JSSScript',
-    'cea': 'JSSComputerExtensionAttribute'
-}
+# List of processors that we support - each is a class in the 
+# `processors` module
+PROCESSORS = [ 'Script', 'ComputerExtensionAttribute' ]
 
 def _get_args(argv=None):
     """ Parse arguments from the commandline and return something sensible """
@@ -84,12 +80,11 @@ def _get_args(argv=None):
                         help=('Name of the TAG in Git. The tag must have been pushed to origin: '
                               'locally committed tags will not be accepted.'))
 
-    parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS.keys(),
+    parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
                         dest='mode', default='script',
-                        help=('Mode of operation. Can be \'script\', in which case all files '
-                              'operated on are assumed to be JSS scripts, or \'cea\', in which '
-                              'case all files operated on are assumed to be JSS Computer Extension '
-                              'Attributes.'))
+                        help=('Mode of operation. Use this option to operate on different types '
+                              'of JSS object. Currently supported values are: {}.\nDefaults to "Script"'
+                              .format("\n".join(PROCESSORS))))
 
     parser.add_argument('--name', metavar='NAME', dest='target_name', type=str, default=None,
                         help=('Name of the target object in the JSS (if omitted, it is assumed '
@@ -178,8 +173,8 @@ def main(argv=None, prefs_file=None):
 
 
 def set_mode(options):
-    """ Are we operating on CEAs or Scripts? """
-    mode = PROCESSORS[options.mode]
+    """ Select a processor to use """
+    mode = options.mode
     print("Running in {} mode".format(mode))
     return mode
 
