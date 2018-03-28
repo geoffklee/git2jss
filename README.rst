@@ -71,7 +71,7 @@ You can use it on the commandine like this::
   # Export the file check_firewall.sh to a ComputerExtensionAttribute object on the JSS called 
   # FirewallCheck, using the existing tag v0.0.9
   
-  $ git2jss --mode ComputerExtensionAttribute --file check_firewall.sh --name check-firewall
+  $ git2jss --mode ComputerExtensionAttribute --file check_firewall.sh --name check-firewall --tag v0.0.9
 
   # Export each script in the current folder that has a script object on the server
   # with a matching name, and exists at tag v1.0.2
