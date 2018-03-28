@@ -47,3 +47,6 @@ output/
 #setuptools	
 .cache/
 dist/
+
+# Preferences file
+com.github.gkluoe.git2jss.plist
