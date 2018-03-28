@@ -7,15 +7,15 @@ Author: Geoff Lee
 
 Overview
 --------
-**Question:** *How do you ensure that all changes you scripts in your JAMF JSS are logged, reversible, and match what you have in source control?*
+**Question:** *How do you ensure that all changes to Scripts and ComputerExtensionAttributes in your JAMF JSS are logged, reversible, and match what you have in source control?*
 
-**Answer:** *Automate it!*
+**Answer:** *Make it zero-effort.*
 
-Using *Git2jss*, after making changes to JSS scripts in your dev/test environment and pushing them to a Git repository, you can export a tagged copy to your JSS, complete with the Git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
+Using *Git2jss*, after making changes to JSS Scripts or CEAs in your dev/test environment and pushing them to a Git repository, you can export a tagged copy to your JSS, complete with the Git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
 
 Templating of some important values is also supported, so your scripts automatically contain details of the last change, and where they can be found in source control.
 
-Passwords are stored in the system keychain.
+Passwords are stored in the system keychain by default.
 
 Installation / Usage
 --------------------
@@ -63,10 +63,15 @@ You can use it on the commandine like this::
   
   $ git2jss --file my_great_script.py --create --tag v1.0.1
 
-  # Export script localscript.sh to a script object on the JSS called do_something_great.sh
+  # Export the file localscript.sh to a Script object on the JSS called do_something_great.sh
   # using the existing tag v0.0.9
   
-  $ git2jss --file localscript.sh --name do_something_great.sh
+  $ git2jss --file localscript.sh --name do_something_great.sh --tag v0.9.9
+
+  # Export the file check_firewall.sh to a ComputerExtensionAttribute object on the JSS called 
+  # FirewallCheck, using the existing tag v0.0.9
+  
+  $ git2jss --mode ComputerExtensionAttribute --file check_firewall.sh --name check-firewall
 
   # Export each script in the current folder that has a script object on the server
   # with a matching name, and exists at tag v1.0.2
