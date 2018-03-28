@@ -116,9 +116,9 @@ def test_check_create_tag(gitrepo):
     oldtag = gitrepo.tag
     try:
         gitrepo.tag = newtag
-        assert not gitrepo.has_tag_on_remote()
+        assert not gitrepo._has_tag_on_remote(newtag)
         gitrepo.create_tag(msg="Tagged by pytest")
-        assert gitrepo.has_tag_on_remote()
+        assert gitrepo._has_tag_on_remote(newtag)
     finally:
         gitrepo.tag = oldtag
 
@@ -156,5 +156,6 @@ def test_error_during_checkout(gitrepo, tmpdir_factory):
     """ Provoke a failure during checkout """
     gitrepo.remote_url = 'https://www.example.com/blah'
     gitrepo.tmp_dir = str(tmpdir_factory.mktemp('checkout_error'))
-    with raises(exceptions.Git2JSSError, match=".*repository 'https://www.example.com/blah.git/' not found"):
+    with raises(exceptions.Git2JSSError,
+                match=".*repository 'https://www.example.com/blah.git/' not found"):
         gitrepo._clone_to_tmp()
