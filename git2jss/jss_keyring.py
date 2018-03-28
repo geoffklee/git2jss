@@ -183,7 +183,7 @@ class KJSSPrefs(jss.JSSPrefs):
 
         # This will throw an exception if the password is missing
         self.password = get_creds_from_keychain(self.url, self.user)
-        
+
         if not all([self.user, self.password, self.url]):
             raise JSSPrefsMissingKeyError("Some preferences are missing. Please "
                                           "delete %s and try again." % self.preferences_file)

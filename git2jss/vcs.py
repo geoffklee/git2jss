@@ -24,6 +24,7 @@ import os
 import io
 from git2jss.exceptions import Git2JSSError
 
+
 class TagNotFoundError(Git2JSSError):
     """ Tag wasn't found """
     pass
@@ -50,15 +51,15 @@ class NotAGitRepoError(Git2JSSError):
 
 class GitRepo(object):
     """ Provides a representation of a Git repository at a particular
-        tag, with methods to retrieve files and information. 
+        tag, with methods to retrieve files and information.
     """
 
     def __init__(self, tag, create=False, sourcedir='.'):
         """ Create a GitRepo object which represents the
         remote repository at state `tag`
-        
+
         :param tag: The VCS tag to use to base this object on
-        :param create: (optional) Whether to create the tag if it doesn't 
+        :param create: (optional) Whether to create the tag if it doesn't
             exist
         :param sourcedir: (optional) The local directory from which to
             glean informaton about the remote repository. Defaults to '.'
@@ -140,21 +141,20 @@ class GitRepo(object):
             script_tag must be present on the git remote
         """
         print("Git remote: {}".format(self.remote_url))
-        output = None
+        # Use check_output to suppress stdout, which is rather chatty
+        # even with '-q'.
         try:
-            output = subprocess.check_output(["git", "clone", "-q", "--branch",
-                               self.tag, self.remote_url + ".git", 
-                               self.tmp_dir], stderr=subprocess.STDOUT)
+            subprocess.check_output(["git", "clone", "-q", "--branch",
+                                     self.tag, self.remote_url + ".git",
+                                     self.tmp_dir], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             # Don't know what happened!
             raise Git2JSSError(err.output)
         else:
             print("Checked out tag {}.".format(self.tag))
 
-
-
     def create_tag(self, msg='Tagged by Git2jss'):
-        """ Create tag and push to git remote 
+        """ Create tag and push to git remote
         :param msg: (optional) Message to attach to the tag when creating it.
         """
         subprocess.check_call(['git', 'tag', '-a', self.tag, '-m', msg],
@@ -163,9 +163,8 @@ class GitRepo(object):
                               cwd=self.tmp_dir)
         print("Tag {} pushed to git remote".format(self.tag))
 
-
     def file_info(self, filename):
-        """ Return a dict of information about `filename` 
+        """ Return a dict of information about `filename`
         :param filename: path to a file relative to the root of the repository
         :rtype: Dict
         """
@@ -188,7 +187,7 @@ class GitRepo(object):
     def path_to_file(self, filename):
         """ Return absolute path to `filename` inside
         our temporary directory
-        :param filename: path to a file relative to the root of the 
+        :param filename: path to a file relative to the root of the
             repository
         :rtype: String
         """
@@ -202,7 +201,7 @@ class GitRepo(object):
     def has_file(self, filename):
         """ Return True if `filename` exists in this
         repo at this tag version, False of not
-        :param filename: path to a file relative to the root of the 
+        :param filename: path to a file relative to the root of the
             repository
         """
         path = os.path.join(self.tmp_dir, filename)
@@ -210,7 +209,7 @@ class GitRepo(object):
 
     def get_file(self, filename):
         """ Return an open file handle to `filename`
-        :param filename: path to a file relative to the root of the 
+        :param filename: path to a file relative to the root of the
             repsitory
         """
         handle = io.open(self.path_to_file(filename), 'r', encoding="utf-8")

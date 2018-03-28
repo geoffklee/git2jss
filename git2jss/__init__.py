@@ -60,9 +60,9 @@ EPILOG = """
 
 VERSION = "0.1.0"
 
-# List of processors that we support - each is a class in the 
+# List of processors that we support - each is a class in the
 # `processors` module
-PROCESSORS = [ 'Script', 'ComputerExtensionAttribute' ]
+PROCESSORS = ['Script', 'ComputerExtensionAttribute']
 
 def _get_args(argv=None):
     """ Parse arguments from the commandline and return something sensible """
@@ -81,7 +81,7 @@ def _get_args(argv=None):
                               'locally committed tags will not be accepted.'))
 
     parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
-                        dest='mode', default='script',
+                        dest='mode', default='Script',
                         help=('Mode of operation. Use this option to operate on different types '
                               'of JSS object. Currently supported values are: {}.\nDefaults to "Script"'
                               .format("\n".join(PROCESSORS))))
@@ -157,15 +157,15 @@ def main(argv=None, prefs_file=None):
             files = [options.source_file]
         for this_file in files:
             # Work out which type of processor to use
-            processor_type = getattr(processors, target_type) 
+            processor_type = getattr(processors, target_type)
 
             # Instantiate the processor
-            processor = processor_type(repo=_repo, _jss=_jss, 
-                                  source_file=this_file, 
-                                  target=options.target_name)
+            processor = processor_type(repo=_repo, _jss=_jss,
+                                       source_file=this_file,
+                                       target=options.target_name)
 
             processor.update()
-            processor.save()         
+            processor.save()
     finally:
         # Make sure the repo tmpdir is
         # cleaned up.

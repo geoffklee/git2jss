@@ -47,7 +47,7 @@ class JSSObject(object):
             jss_method = getattr(self._jss, self.target_type)
             self.target_object = jss_method(self.target_name)
         except jss.JSSGetError as err:
-            if err.status_code == 404:
+            if err.status_code == 404: # pylint: disable=E1101
                 raise TargetNotFoundError(
                     "Couldn't find a {} called '{}' on the JSS"
                     .format(self.target_type, self.target_name))
@@ -108,15 +108,15 @@ class Script(JSSObject):
         if should_template:
             print("Templating file...")
             self.target_object.find('script_contents_encoded').text = b64encode(
-                template_file(self.source_file, 
-                              info, 
+                template_file(self.source_file,
+                              info,
                               USER=self._jss.user).encode('utf-8'))
         else:
             print("No templating requested.")
             self.target_object.find('script_contents_encoded').text = b64encode(
                 self.source_file.read().encode('utf-8'))
 
-        # According to the JAMF Pro API, only one of script_contents and 
+        # According to the JAMF Pro API, only one of script_contents and
         # script_contents_encoded should be sent, so delete the one we are not using.
         self.target_object.remove(self.target_object.find('script_contents'))
 
@@ -143,7 +143,7 @@ class ComputerExtensionAttribute(JSSObject):
         # script section of the ComputerExtensionAttribute
         if should_template:
             print("Templating file...")
-            output = template_file(self.source_file, info, 
+            output = template_file(self.source_file, info,
                                    USER=self._jss.user)
         else:
             print("No templating requested.")
