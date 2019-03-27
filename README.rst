@@ -1,11 +1,11 @@
+.. image:: https://dev.azure.com/gklee/git2jss/_build/latest?definitionId=1&branchName=master
+
 Git2JSS
 ===============================
 
 Version : v1.0.0
 
 Author: Geoff Lee
-
-![Build Status](https://dev.azure.com/gklee/git2jss/_apis/build/status/gkluoe.git2jss?branchName=master)
 
 Overview
 --------
