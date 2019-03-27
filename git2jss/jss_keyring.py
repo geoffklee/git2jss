@@ -25,12 +25,12 @@ import subprocess
 from xml.etree import ElementTree
 from xml.parsers.expat import ExpatError
 from six.moves import input
-import keyring
 import jss
 from jss.exceptions import (JSSError, JSSPrefsMissingKeyError,
                             JSSPrefsMissingFileError)
 
 from jss.tools import (is_osx, is_linux, loop_until_valid_response)
+
 try:
     from jss.contrib import FoundationPlist
 except ImportError as err:
@@ -42,6 +42,7 @@ except ImportError as err:
         print("See README for information on this issue.")
     import plistlib
 
+import keyring
 
 class KJSSPrefs(jss.JSSPrefs):
     """ This is a subclass of the JSSPrefs class which stores passwords in
