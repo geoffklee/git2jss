@@ -5,7 +5,7 @@ Version : v1.0.0
 
 Author: Geoff Lee
 
-[![Build Status:](https://dev.azure.com/gklee/git2jss/_apis/build/status/gkluoe.git2jss?branchName=master)](https://dev.azure.com/gklee/git2jss/_build/latest?definitionId=1&branchName=master)
+[![Build Status](https://dev.azure.com/gklee/git2jss/_apis/build/status/gkluoe.git2jss?branchName=master)](https://dev.azure.com/gklee/git2jss/_build/latest?definitionId=1&branchName=master)
 
 Overview
 --------
