@@ -1,4 +1,4 @@
-.. image:: https://dev.azure.com/gklee/git2jss/_build/latest?definitionId=1&branchName=master
+.. image:: https://dev.azure.com/gklee/git2jss/_apis/build/status/gkluoe.git2jss?branchName=master
 
 Git2JSS
 ===============================
