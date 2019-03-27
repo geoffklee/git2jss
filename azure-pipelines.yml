@@ -10,7 +10,7 @@ jobs:
 
 - job: 'Test'
   pool:
-    vmImage: 'Ubuntu-16.04'
+    vmImage: 'macOS-10.13'
   strategy:
     matrix:
       Python27:
@@ -20,6 +20,7 @@ jobs:
   steps:
   - task: UsePythonVersion@0
     inputs:
+      addToPath: true
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
@@ -30,6 +31,6 @@ jobs:
     displayName: 'Lint'
 
   - script: |
-      python setup.py test -a '--ignore=tests/test_processors.py'
+      python setup.py test -a '--ignore=tests/test_processors.py --deselect=test_check_create_tag' 
     displayName: 'Run tests - no JSS'
 
