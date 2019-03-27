@@ -5,3 +5,4 @@ pypi-publisher
 pylint
 # Install
 python-jss
+keyring
