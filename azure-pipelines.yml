@@ -31,6 +31,6 @@ jobs:
     displayName: 'Lint'
 
   - script: |
-      python setup.py test -a '--ignore=tests/test_processors.py --deselect=test_check_create_tag' 
+      python setup.py test -a '--ignore=tests/test_processors.py --deselect=tests/test_vcs.py::test_check_create_tag' 
     displayName: 'Run tests - no JSS'
 
