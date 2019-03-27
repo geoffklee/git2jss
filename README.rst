@@ -1,3 +1,5 @@
+.. image:: https://dev.azure.com/gklee/git2jss/_apis/build/status/gkluoe.git2jss?branchName=master
+
 Git2JSS
 ===============================
 
