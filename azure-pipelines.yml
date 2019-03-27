@@ -28,6 +28,6 @@ jobs:
 
   - script: |
       pip install pytest
-      python setup.py test --junitxml=junit/test-results.xml
+      python setup.py test
     displayName: 'pytest'
 
