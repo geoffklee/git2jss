@@ -28,25 +28,6 @@ jobs:
 
   - script: |
       pip install pytest
-      pytest tests --doctest-modules --junitxml=junit/test-results.xml
+      python setup.py test --junitxml=junit/test-results.xml
     displayName: 'pytest'
 
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFiles: '**/test-results.xml'
-      testRunTitle: 'Python $(python.version)'
-    condition: succeededOrFailed()
-
-- job: 'Publish'
-  dependsOn: 'Test'
-  pool:
-    vmImage: 'Ubuntu-16.04'
-
-  steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '2.7'
-      architecture: 'x64'
-
-  - script: python setup.py sdist
-    displayName: 'Build sdist'
