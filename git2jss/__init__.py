@@ -83,7 +83,8 @@ def _get_args(argv=None):
     parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
                         dest='mode', default='Script',
                         help=('Mode of operation. Use this option to operate on different types '
-                              'of JSS object. Currently supported values are: {}.\nDefaults to "Script"'
+                              'of JSS object. Currently supported values are: {}.\nDefaults to '
+                              '"Script"'
                               .format("\n".join(PROCESSORS))))
 
     parser.add_argument('--name', metavar='NAME', dest='target_name', type=str, default=None,
