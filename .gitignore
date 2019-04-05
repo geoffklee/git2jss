@@ -48,5 +48,6 @@ output/
 .cache/
 dist/
 
-# Preferences file
+# Just there for testing
 com.github.gkluoe.git2jss.plist
+_jss
