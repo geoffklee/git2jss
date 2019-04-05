@@ -69,16 +69,22 @@ def _get_args(argv=None):
 
     parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [ --mode MODE ] '
                                             '[--create]  [ --no-keychain] [--all | --file FILE '
-                                            '[ --name NAME ] ]  --tag TAG'),
+                                            '[ --name NAME ] ]  [ --tag TAG | --branch BRANCH ]'),
                                      version=VERSION, description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-i', '--jss-info', action='store_true', dest='jss_info',
                         help="Show information about the currently configured JSS")
 
-    parser.add_argument('--tag', metavar='TAG', type=str, default=False,
-                        help=('Name of the TAG in Git. The tag must have been pushed to origin: '
+    parser.add_argument('--tag', metavar='TAG', type=str, default=None,
+                        help=('Name of the tag on the git remote to operate from.'
+                              'The tag must have been pushed to origin: '
                               'locally committed tags will not be accepted.'))
+
+    parser.add_argument('--branch', metavar='BRANCH', type=str, default=None,
+                        help=('An branch on the git remote operate from.'
+                              'eg: develop'
+                              'The HEAD of the branch will be checked out and operated on'))
 
     parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
                         dest='mode', default='Script',
@@ -90,9 +96,6 @@ def _get_args(argv=None):
     parser.add_argument('--name', metavar='NAME', dest='target_name', type=str, default=None,
                         help=('Name of the target object in the JSS (if omitted, it is assumed '
                               'that the target object has a name exactly matching FILE)'))
-
-    parser.add_argument('--create', action='store_true', default=False, dest='create_tag',
-                        help="If TAG doesn't exist, then create it and push to the server")
 
     parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
                         help=('Do not store authentication credentials in the system keychain.\n'
@@ -115,10 +118,15 @@ def _get_args(argv=None):
         print("WARNING: --all was specified so ignoring --name option")
         options.target_name = None
 
-    # Unless we've only been asked for JSS info, we need a tag to do anything
-    if not options.jss_info and not options.tag:
+    # Unless we've only been asked for JSS info, we need a tag or branch to do anything
+    if not options.jss_info and (not (options.branch or options.tag)):
+        parser.error(("Which tag or branch HEAD do you want to push?"
+                      "Please specify with '--tag' or '--branch'"))
+
+    # Can't specify --branch and --tag
+    if options.branch and options.tag:
         parser.error(
-            "Which tag do you want to push? Please specify with '--tag'")
+            "Please specify --branch or --tag, but not both!")
 
     # We need to know which files to operate on!
     if options.tag and not (options.source_file or options.push_all):
@@ -149,7 +157,7 @@ def main(argv=None, prefs_file=None):
         print_jss_info(jss_prefs)
         sys.exit(0)
 
-    _repo = GitRepo(tag=options.tag, create=options.create_tag)
+    _repo = GitRepo(tag=options.tag, branch=options.branch)
 
     try:
         if options.push_all:

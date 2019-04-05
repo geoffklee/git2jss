@@ -3,7 +3,7 @@
 Git2JSS
 ===============================
 
-Version : v1.0.0
+Version : v1.1.0rc1
 
 Author: Geoff Lee
 
@@ -14,6 +14,8 @@ Overview
 **Answer:** *Make it zero-effort.*
 
 Using *Git2jss*, after making changes to JSS Scripts or CEAs in your dev/test environment and pushing them to a Git repository, you can export a tagged copy to your JSS, complete with the Git changelog in the 'Notes' field. Reverting a change is as easy as exporting the previous tagged version.
+
+You can also use this script in a Continuous Integration pipeline to export scripts from the head of a given branch to your JSS.
 
 Templating of some important values is also supported, so your scripts automatically contain details of the last change, and where they can be found in source control.
 
@@ -61,14 +63,16 @@ Commandline
 
 You can use it on the commandine like this::
 
-  # Create a new tag, v1.0.1, and export my_great_script.py to a script object of the same name on the JSS
-  
-  $ git2jss --file my_great_script.py --create --tag v1.0.1
-
   # Export the file localscript.sh to a Script object on the JSS called do_something_great.sh
   # using the existing tag v0.0.9
   
+  $ git tag v0.0.9 && git push origin v0.0.9
   $ git2jss --file localscript.sh --name do_something_great.sh --tag v0.0.9
+  
+  # Export the file run-softwareupdate.py at the head of the master branch
+  # to an object on the JSS with the same name
+  
+  $ git2jss --file run-softwareupdate.py --branch master
 
   # Export the file check_firewall.sh to a ComputerExtensionAttribute object on the JSS called 
   # FirewallCheck, using the existing tag v0.0.9
@@ -79,6 +83,10 @@ You can use it on the commandine like this::
   # with a matching name, and exists at tag v1.0.2
   
   $ git2jss --all --tag v1.0.2
+  
+  # Or do the same for all files at the head of branch 'production'
+  
+  $ git2jss --all --branch production
 
   # Show information about the currently configured JSS (or enter details if none configured)
   
@@ -89,24 +97,25 @@ Templating
 
 The following variables, if embedded into your script, will be replaced with the indicated values when being transferred to the JSS
 
-+--------------+---------------------------------------------------------------------+
-| Variable     | Value                                                               | 
-+==============+=====================================================================+
-| ``@@VERSION``| The name of the git tag that you have specified (eg v1.0.1)         |
-+--------------+---------------------------------------------------------------------+
-| ``@@ORIGIN`` | Assuming you have a git remote called 'origin', the URL thereof     |
-|              | (eg https://github.com/uoe-macos/jss)                               |
-+--------------+---------------------------------------------------------------------+
-| ``@@PATH``   | The name of the file in the git repository identified by @@ORIGIN`` |
-+--------------+---------------------------------------------------------------------+
-| ``@@DATE``   | The date of the *last change* of the file in Git                    |
-+--------------+---------------------------------------------------------------------+
-| ``@@USER``   | The username used by git2jss to authenticate to the JSS at          |
-|              | the time the script was exported                                    |
-+--------------+---------------------------------------------------------------------+
-| ``@@LOG``    | The entire Git log for this script, formatted thus:                 |
-|              | ``'%h - %cD %ce: %n %s%n'``                                         |
-+--------------+---------------------------------------------------------------------+
++--------------+-------------------------------------------------------------------------------------------------+
+| Variable     | Value                                                                                           | 
++==============+=================================================================================================+
+| ``@@VERSION``| If --tag was used: The name of the git tag that you have specified (eg v1.0.1)                  |
+|              | If --branch was used: The commit hash of the last change of the file, and a note of the branch  |
++--------------+-------------------------------------------------------------------------------------------------+
+| ``@@ORIGIN`` | Assuming you have a git remote called 'origin', the URL thereof                                 |
+|              | (eg https://github.com/uoe-macos/jss)                                                           |
++--------------+-------------------------------------------------------------------------------------------------+
+| ``@@PATH``   | The name of the file in the git repository identified by @@ORIGIN``                             |
++--------------+-------------------------------------------------------------------------------------------------+
+| ``@@DATE``   | The date of the *last change* of the file in Git                                                |
++--------------+-------------------------------------------------------------------------------------------------+
+| ``@@USER``   | The username used by git2jss to authenticate to the JSS at                                      |
+|              | the time the script was exported                                                                |
++--------------+-------------------------------------------------------------------------------------------------+
+| ``@@LOG``    | The entire Git log for this script, formatted thus:                                             |
+|              | ``'%h - %cD %ce: %n %s%n'``                                                                     |
++--------------+-------------------------------------------------------------------------------------------------+
 
 ``@@LOG`` is used to construct the 'Notes' field in the JSS, overwriting anything that was present previously.
 
