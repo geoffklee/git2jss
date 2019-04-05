@@ -77,7 +77,7 @@ def _get_args(argv=None):
                         help="Show information about the currently configured JSS")
 
     parser.add_argument('--tag', metavar='TAG', type=str, default=None,
-                        help=('Name of the tag on the git remote to operate from.' 
+                        help=('Name of the tag on the git remote to operate from.'
                               'The tag must have been pushed to origin: '
                               'locally committed tags will not be accepted.'))
 
@@ -119,9 +119,9 @@ def _get_args(argv=None):
         options.target_name = None
 
     # Unless we've only been asked for JSS info, we need a tag or branch to do anything
-    if not options.jss_info and ( not (options.branch or options.tag) ):
-        parser.error(
-            "Which tag or branch HEAD do you want to push? Please specify with '--tag' or '--branch'")
+    if not options.jss_info and (not (options.branch or options.tag)):
+        parser.error(("Which tag or branch HEAD do you want to push?"
+                      "Please specify with '--tag' or '--branch'"))
 
     # Can't specify --branch and --tag
     if options.branch and options.tag:

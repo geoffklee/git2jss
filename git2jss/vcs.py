@@ -91,8 +91,8 @@ class GitRepo(object):
             self._clone_to_tmp()
         else:
             raise RefNotFoundError("Ref doesn't exist on git remote {}: {}"
-                                       .format(self.remote_url, self.ref))
-                
+                                   .format(self.remote_url, self.ref))
+
     def __del__(self):
         """ Called when there are 0 references left to this
         object. try to delete our temporary directory.
@@ -165,7 +165,7 @@ class GitRepo(object):
         commit = subprocess.check_output(["git", "log",
                                           "-1", "--format=%H",
                                           filename], cwd=self.tmp_dir).strip()
-        
+
         return '{} on branch: {}'.format(commit, self.branch)
 
     def file_info(self, filename):
@@ -221,8 +221,8 @@ class GitRepo(object):
         return handle
 
     def _has_ref_on_remote(self, r_name):
-        """ Check whether a reference `r_name` exists in 
-        the current repo 
+        """ Check whether a reference `r_name` exists in
+        the current repo
         :rtype: True or false.
         """
         # Get refs from the git remote
@@ -234,4 +234,4 @@ class GitRepo(object):
         print(refs)
         # Does tag exist?
         return r_name in refs
-
+        
