@@ -59,8 +59,8 @@ class GitRepo(object):
 
     def __init__(self, tag=None, branch=None, sourcedir='.'):
         """ Create a GitRepo object which represents the
-        remote repository. The remote repository will be cloned using 
-        the `tag` OR `branch` specified. `tag` and `branch` together 
+        remote repository. The remote repository will be cloned using
+        the `tag` OR `branch` specified. `tag` and `branch` together
         is an error.
 
         :param tag: The VCS tag to use to base this object on
@@ -77,7 +77,7 @@ class GitRepo(object):
             raise ParameterError("Specify only one of `tag` or `branch`")
 
         # The reference we will use to clone the repo from
-        self.ref = tag or branch 
+        self.ref = tag or branch
 
         self.sourcedir = sourcedir
         self.tmp_dir = tempfile.mkdtemp()
@@ -240,4 +240,3 @@ class GitRepo(object):
         print(refs)
         # Does tag exist?
         return r_name in refs
-        

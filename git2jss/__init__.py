@@ -34,7 +34,8 @@ from .exceptions import Git2JSSError
 
 
 
-DESCRIPTION = """A tool to update scripts on the JSS to match a tag or the head of a branch in a Git repository.
+DESCRIPTION = """A tool to update scripts on the JSS to match a tag or the head
+of a branch in a Git repository.
 
 The tool can push scripts from an existing tag or from the head of any branch
 
@@ -85,7 +86,7 @@ def _get_args(argv=None):
                         help=('An branch on the git remote operate from.'
                               'eg: develop.'
                               'The head of the branch will be checked out and used as'
-                              'the source for "--file"))
+                              'the source for "--file"'))
 
     parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
                         dest='mode', default='Script',
@@ -101,7 +102,8 @@ def _get_args(argv=None):
     parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
                         help=('Do not store authentication credentials in the system keychain. '
                               'Instead, store them IN PLAINTEXT in the preferences file.\n'
-                              'Be careful with this option - it could be useful in CI/CD environments.'))
+                              'Be careful with this option - it could be useful in CI/CD '
+                              'environments.'))
 
     file_or_all = parser.add_mutually_exclusive_group()
 
