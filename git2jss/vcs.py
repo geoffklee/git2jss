@@ -48,6 +48,9 @@ class NotAGitRepoError(Git2JSSError):
     """ Dir is not a git repo """
     pass
 
+class ParameterError(Git2JSSError):
+    """ Method called with unusable parameters  """
+    pass
 
 class GitRepo(object):
     """ Provides a representation of a Git repository at a particular
@@ -56,12 +59,12 @@ class GitRepo(object):
 
     def __init__(self, tag=None, branch=None, sourcedir='.'):
         """ Create a GitRepo object which represents the
-        remote repository at reference `ref`
+        remote repository. The remote repository will be cloned using 
+        the `tag` OR `branch` specified. `tag` and `branch` together 
+        is an error.
 
         :param tag: The VCS tag to use to base this object on
-        :param ref: The VCS reference to use to base this object on
-        :param create: (optional) Whether to create the tag if it doesn't
-            exist
+        :param branch: The VCS reference to use to base this object on
         :param sourcedir: (optional) The local directory from which to
             glean informaton about the remote repository. Defaults to '.'
         :rtype: vcs.GitRepo
@@ -70,10 +73,11 @@ class GitRepo(object):
         self.tag = tag
         self.branch = branch
 
-        if tag:
-            self.ref = tag
-        else:
-            self.ref = branch
+        if not (tag or branch):
+            raise ParameterError("Specify only one of `tag` or `branch`")
+
+        # The reference we will use to clone the repo from
+        self.ref = tag or branch 
 
         self.sourcedir = sourcedir
         self.tmp_dir = tempfile.mkdtemp()
@@ -90,12 +94,12 @@ class GitRepo(object):
         if self._has_ref_on_remote(self.ref):
             self._clone_to_tmp()
         else:
-            raise RefNotFoundError("Ref doesn't exist on git remote {}: {}"
-                                   .format(self.remote_url, self.ref))
+            raise RefNotFoundError("Tag or branch {} doesn't exist on git remote {}"
+                                   .format(self.ref, self.remote_url))
 
     def __del__(self):
         """ Called when there are 0 references left to this
-        object. try to delete our temporary directory.
+        object. Try to delete our temporary directory.
         """
         # I don't think this is the best way to do this.
         # we should be using a context manager but I don't know
@@ -142,7 +146,7 @@ class GitRepo(object):
 
     def _clone_to_tmp(self):
         """ Clone fresh copy of the repo we are going to operate on
-            self.ref must be present on the git remote
+            self.ref must be present as a tag or branch on the git remote
         """
         print("Git remote: {}".format(self.remote_url))
         # Use check_output to suppress stdout, which is rather chatty
@@ -159,8 +163,8 @@ class GitRepo(object):
 
 
     def _format_commit(self, filename):
-        """ Return a nice-looking string to be the 'version'
-        of a file in this repo.
+        """ Return a string combining the commit ID and branch
+        of `filename` to be the 'version' of a file in this repo.
         """
         commit = subprocess.check_output(["git", "log",
                                           "-1", "--format=%H",
@@ -200,14 +204,15 @@ class GitRepo(object):
         if self.has_file(filename):
             return os.path.abspath(path)
         else:
-            raise FileNotFoundError("Couldn't find file {} at ref {}"
+            raise FileNotFoundError("Couldn't find file {} at tag/branch {}"
                                     .format(filename, self.ref))
 
     def has_file(self, filename):
         """ Return True if `filename` exists in this
-        repo at this tag version, False of not
+        repo at this tag/branch. False if not
         :param filename: path to a file relative to the root of the
             repository
+        :rtype: Bool
         """
         path = os.path.join(self.tmp_dir, filename)
         return os.path.isfile(os.path.abspath(path))
@@ -216,14 +221,15 @@ class GitRepo(object):
         """ Return an open file handle to `filename`
         :param filename: path to a file relative to the root of the
             repsitory
+        :rtype: File-like object
         """
         handle = io.open(self.path_to_file(filename), 'r', encoding="utf-8")
         return handle
 
     def _has_ref_on_remote(self, r_name):
-        """ Check whether a reference `r_name` exists in
+        """ Check whether a tag or branch `r_name` exists in
         the current repo
-        :rtype: True or false.
+        :rtype: Boolean
         """
         # Get refs from the git remote
         reflist = subprocess.check_output(['git', 'ls-remote', '--refs'],
