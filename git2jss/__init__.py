@@ -105,6 +105,11 @@ def _get_args(argv=None):
                               'Be careful with this option - it could be useful in CI/CD '
                               'environments.'))
 
+    parser.add_argument('--local-repo', metavar='LOCAL_REPO', dest='local_repo', type=str,
+                        default='.',
+                        help=('Path to the locally checked-out copy of the git repo you want '
+                              'to work on'))
+
     file_or_all = parser.add_mutually_exclusive_group()
 
     file_or_all.add_argument('--file', metavar='FILE', dest='source_file', type=str,
@@ -166,7 +171,7 @@ def main(argv=None, prefs_file=None):
 
     try:
         if options.push_all:
-            files = list_matching_files(".", pattern=r'.*\.(sh|py|pl)$')
+            files = list_matching_files(options.local_repo, pattern=r'.*\.(sh|py|pl)$')
         else:
             files = [options.source_file]
         for this_file in files:
