@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2018 Geoff Lee <g.lee@ed.ac.uk>
+# Copyright (C) 2019 Geoff Lee <g.lee@ed.ac.uk>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,9 +34,10 @@ from .exceptions import Git2JSSError
 
 
 
-DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
+DESCRIPTION = """A tool to update scripts on the JSS to match a tag or the head
+of a branch in a Git repository.
 
-The tool can create a new tag, or push scripts from an existing tag.
+The tool can push scripts from an existing tag or from the head of any branch
 
 The 'notes' field of the JSS script object will contain the Git log for the corresponding
 Script file. Some templating is also carried out.
@@ -47,7 +48,7 @@ MANY thanks to sheagcraig for that module:  https://github.com/sheagcraig/python
 TEMPLATING: The following fields, if present in the script file, will be templated with values from Git
 
 @@DATE Date of last change
-@@VERSION The name of the TAG this file was pushed from
+@@VERSION The name of the TAG this file was pushed from, or the commit ID combined with BRANCH
 @@ORIGIN Origin URL from Git config
 @@PATH The path to the script file relative to the root of the Git repo
 @@USER JSS Username used to push the script (from jss-python configuration)
@@ -78,13 +79,14 @@ def _get_args(argv=None):
 
     parser.add_argument('--tag', metavar='TAG', type=str, default=None,
                         help=('Name of the tag on the git remote to operate from.'
-                              'The tag must have been pushed to origin: '
+                              'The tag must have been pushed to the remote: '
                               'locally committed tags will not be accepted.'))
 
     parser.add_argument('--branch', metavar='BRANCH', type=str, default=None,
                         help=('An branch on the git remote operate from.'
-                              'eg: develop'
-                              'The HEAD of the branch will be checked out and operated on'))
+                              'eg: develop.'
+                              'The head of the branch will be checked out and used as'
+                              'the source for "--file"'))
 
     parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
                         dest='mode', default='Script',
@@ -98,17 +100,20 @@ def _get_args(argv=None):
                               'that the target object has a name exactly matching FILE)'))
 
     parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
-                        help=('Do not store authentication credentials in the system keychain.\n'
-                              'You probably do not want to use this option.'))
+                        help=('Do not store authentication credentials in the system keychain. '
+                              'Instead, store them IN PLAINTEXT in the preferences file.\n'
+                              'Be careful with this option - it could be useful in CI/CD '
+                              'environments.'))
 
     file_or_all = parser.add_mutually_exclusive_group()
 
     file_or_all.add_argument('--file', metavar='FILE', dest='source_file', type=str,
-                             help='File containing the script to push to the JSS')
+                             help='File in the Git repo containing the script to push to the JSS')
 
     file_or_all.add_argument('--all', action='store_true', default=False, dest='push_all',
-                             help=('Push every file in the current directory for which there is an '
+                             help=('Push every file in the Git repo for which there is an '
                                    'object with a matching name in the JSS.'))
+
 
     options = parser.parse_args(argv)
 
@@ -129,7 +134,7 @@ def _get_args(argv=None):
             "Please specify --branch or --tag, but not both!")
 
     # We need to know which files to operate on!
-    if options.tag and not (options.source_file or options.push_all):
+    if (options.tag or options.branch) and not (options.source_file or options.push_all):
         parser.error("You need to specify either a filename "
                      "(--file FILE) or all files (--all)")
 
