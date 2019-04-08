@@ -22,7 +22,8 @@ class JSSObject(object):
     target_name = None
     target_object = None
 
-    def __init__(self, repo, _jss, source_file, target=None, target_type='Script'):
+    def __init__(self, repo, _jss, source_file,
+                 target=None, target_type='Script'):
         """ Load source file from the vcs and
         target object from the JSS
 

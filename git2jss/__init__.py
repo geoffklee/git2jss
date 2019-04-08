@@ -167,7 +167,7 @@ def main(argv=None, prefs_file=None):
         print_jss_info(jss_prefs)
         sys.exit(0)
 
-    _repo = GitRepo(tag=options.tag, branch=options.branch)
+    _repo = GitRepo(tag=options.tag, branch=options.branch, sourcedir=options.local_repo)
 
     try:
         if options.push_all:

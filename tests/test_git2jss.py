@@ -144,3 +144,50 @@ def test_prefs_setup(capsys, monkeypatch):
     assert(keychain_password == prefs_values['jss_pass'])
 
     os.unlink(prefs_file)
+
+
+def test_create_script_from_custom_src_branch():
+    args = ["--mode", "Script", 
+            "--file", "coreconfig-softwareupdate-run.py",
+            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--name", "macad-2018-test.py",
+            "--branch", "master"]
+    git2jss.main(argv=args)
+    # TODO: check that the created script is what we expect
+
+
+def test_create_script_from_dot_branch():
+    cwd = os.getcwd()
+    try:
+        os.chdir('_jss')
+        args = ["--mode", "Script", 
+                "--file", "coreconfig-softwareupdate-run.py",
+                "--name", "macad-2018-test.py",
+                "--branch", "master"]
+        git2jss.main(argv=args)
+    finally:
+        os.chdir(cwd)
+    # TODO: check that the created script is what we expect
+
+def test_create_script_from_custom_src_tag():
+    args = ["--mode", "Script", 
+            "--file", "coreconfig-softwareupdate-run.py",
+            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--name", "macad-2018-test.py",
+            "--tag", "0.0.49"]
+    git2jss.main(argv=args)
+    # TODO: check that the created script is what we expect
+
+
+def test_create_script_from_dot_tag():
+    cwd = os.getcwd()
+    try:
+        os.chdir('_jss')
+        args = ["--mode", "Script", 
+                "--file", "coreconfig-softwareupdate-run.py",
+                "--name", "macad-2018-test.py",
+                "--tag", "0.0.49"]
+        git2jss.main(argv=args)
+    finally:
+        os.chdir(cwd)
+    # TODO: check that the created script is what we expect
