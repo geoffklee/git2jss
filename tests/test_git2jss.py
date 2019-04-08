@@ -240,7 +240,7 @@ def test_exception_invalid_file():
         git2jss.main(argv=args)
 
 
-def test_exception_invalid_mode():
+def test_exception_invalid_mode(capsys):
     args = ["--mode", "NotAMode", 
             "--file", "coreconfig-softwareupdate-run.py",
             "--local-repo", "_jss", 
@@ -248,6 +248,19 @@ def test_exception_invalid_mode():
             "--tag", "0.0.49"]
     with pytest.raises(SystemExit):
         git2jss.main(argv=args)
-        out = capsys.readouterr()[0]
-        assert out.find(
-            """(choose from 'Script', 'ComputerExtensionAttribute')""")
+    out = capsys.readouterr()[0]
+    assert out.find(
+        """(choose from 'Script', 'ComputerExtensionAttribute')""")
+
+
+def test_exception_no_tag_or_branch(capsys):
+    args = ["--mode", "Script", 
+            "--file", "coreconfig-softwareupdate-run.py",
+            "--local-repo", "_jss", 
+            "--name", "macad-2018-test.py",
+            ]
+    with pytest.raises(SystemExit):
+        git2jss.main(argv=args)
+    out = capsys.readouterr()[0]
+    assert out.find(
+        """(Please specify with '--tag' or '--branch')""")
