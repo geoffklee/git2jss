@@ -1,6 +1,7 @@
 """ Processors which take sync an object in the JSS
 with a copy in version control. """
 from __future__ import absolute_import, print_function
+import os
 from base64 import b64encode
 from string import Template
 import jss
@@ -21,17 +22,18 @@ class JSSObject(object):
     target_name = None
     target_object = None
 
-    def __init__(self, repo, _jss, source_file, target=None, target_type='Script'):
+    def __init__(self, repo, _jss, source_file,
+                 target=None, target_type='Script'):
         """ Load source file from the vcs and
         target object from the JSS
 
         `repo` should be a repo from the vcs module
         `jss` should be a JSS object
-        `source_file` should be the name of the source file
+        `source_file` should be the path to the source file
         """
 
-        self.source_name = source_file
-        self.target_name = target or source_file
+        self.source_name = (os.path.split(source_file)[1])
+        self.target_name = target or self.source_name
         self.target_type = target_type
         self.repo = repo
         self._jss = _jss
@@ -40,7 +42,7 @@ class JSSObject(object):
         self._load_source_file()
 
     def _load_target_object(self):
-        """ Load the target pbject from the JSS
+        """ Load the target object from the JSS
         """
         try:
             # Calls _jss.'target_type'(): eg _jss.Script()
