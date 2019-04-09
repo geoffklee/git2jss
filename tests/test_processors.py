@@ -6,6 +6,9 @@ import pytest
 from pytest import raises
 import jss
 
+# This whole module relies on being able to access a JSS
+pytestmark = pytest.mark.need_jss
+
 # You'll need to create this file...
 prefs = jkc.KJSSPrefs(preferences_file='tests/com.github.gkluoe.git2jss.plist')
 

@@ -33,7 +33,6 @@ setup(
     author_email='g.lee@ed.ac.uk',
     setup_requires = ['pytest-runner'],
     tests_require = ['pytest-runner', 'pytest', 'pylint', 'mock'],
-    cmdclass = {'test': PyTest},
     entry_points={
         'console_scripts': [
            'git2jss = git2jss.__init__:main'
