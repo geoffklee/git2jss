@@ -146,7 +146,7 @@ def test_prefs_setup(capsys, monkeypatch):
 
     os.unlink(prefs_file)
 
-
+@pytest.mark.need_jss
 def test_create_script_from_custom_src_branch():
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
@@ -156,7 +156,7 @@ def test_create_script_from_custom_src_branch():
     git2jss.main(argv=args)
     # TODO: check that the created script is what we expect
 
-
+@pytest.mark.need_jss
 def test_create_script_from_dot_branch():
     cwd = os.getcwd()
     try:
@@ -170,6 +170,7 @@ def test_create_script_from_dot_branch():
         os.chdir(cwd)
     # TODO: check that the created script is what we expect
 
+@pytest.mark.need_jss
 def test_create_script_from_custom_src_tag():
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
@@ -179,7 +180,7 @@ def test_create_script_from_custom_src_tag():
     git2jss.main(argv=args)
     # TODO: check that the created script is what we expect
 
-
+@pytest.mark.need_jss
 def test_create_script_from_dot_tag():
     cwd = os.getcwd()
     try:
@@ -193,24 +194,27 @@ def test_create_script_from_dot_tag():
         os.chdir(cwd)
     # TODO: check that the created script is what we expect
 
-def test_exception_invalid_tag():
+def test_exception_invalid_tag(prefs_file_no_keychain):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
             "--local-repo", os.path.join(os.getcwd(), "_jss"), 
             "--name", "macad-2018-test.py",
-            "--tag", "notatag"]
+            "--tag", "notatag",
+            "--no-keychain"]
     with raises(git2jss.vcs.RefNotFoundError):
-        git2jss.main(argv=args)
+        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
     
-def test_exception_invalid_branch():
+def test_exception_invalid_branch(prefs_file_no_keychain):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
             "--local-repo", os.path.join(os.getcwd(), "_jss"), 
             "--name", "macad-2018-test.py",
-            "--branch", "notabranch"]
+            "--branch", "notabranch",
+            "--no-keychain"]
     with raises(git2jss.vcs.RefNotFoundError):
-        git2jss.main(argv=args)
+        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
+@pytest.mark.need_jss
 def test_exception_invalid_target():
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
@@ -220,47 +224,51 @@ def test_exception_invalid_target():
     with raises(git2jss.processors.TargetNotFoundError):
         git2jss.main(argv=args)
 
-def test_exception_invalid_repo():
+def test_exception_invalid_repo(prefs_file_no_keychain):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
             "--local-repo", "/tmp", 
             "--name", "macad-2018-test.py",
-            "--tag", "0.0.49"]
+            "--tag", "0.0.49",
+            "--no-keychain"]
     with raises(git2jss.vcs.NotAGitRepoError):
-        git2jss.main(argv=args)
+        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
-
-def test_exception_invalid_file():
+@pytest.mark.need_jss
+def test_exception_invalid_file(prefs_file_no_keychain):
     args = ["--mode", "Script", 
             "--file", "NotAFile",
             "--local-repo", "_jss", 
             "--name", "macad-2018-test.py",
-            "--tag", "0.0.49"]
+            "--tag", "0.0.49",
+            "--no-keychain"]
     with raises(git2jss.vcs.FileNotFoundError):
-        git2jss.main(argv=args)
+        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
 
-def test_exception_invalid_mode(capsys):
+def test_exception_invalid_mode(capsys, prefs_file_no_keychain):
     args = ["--mode", "NotAMode", 
             "--file", "coreconfig-softwareupdate-run.py",
             "--local-repo", "_jss", 
             "--name", "macad-2018-test.py",
-            "--tag", "0.0.49"]
+            "--tag", "0.0.49",
+            "--no-keychain"]
     with pytest.raises(SystemExit):
-        git2jss.main(argv=args)
+        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
     out = capsys.readouterr()[0]
     assert out.find(
         """(choose from 'Script', 'ComputerExtensionAttribute')""")
 
 
-def test_exception_no_tag_or_branch(capsys):
+def test_exception_no_tag_or_branch(capsys, prefs_file_no_keychain):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
             "--local-repo", "_jss", 
             "--name", "macad-2018-test.py",
+            "--no-keychain"
             ]
     with pytest.raises(SystemExit):
-        git2jss.main(argv=args)
+        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
     out = capsys.readouterr()[0]
     assert out.find(
         """(Please specify with '--tag' or '--branch')""")
