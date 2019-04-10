@@ -91,6 +91,22 @@ def test_jss_info_no_keychain(prefs_file_no_keychain, capsys):
             """JSS: https://some.domain.example.com/directory:port\nUsername: slartibartfarst""")
 
 
+def test_jss_info_no_keychain_prefs_commandline(capsys, prefs_file_no_keychain):
+    args = ["--jss-info", "--no-keychain", "--prefs-file", prefs_file_no_keychain()]
+    with pytest.raises(SystemExit):
+        git2jss.main(argv=args)
+    out = capsys.readouterr()[0]
+    assert out.find(
+        """JSS: https://some.domain.example.com/directory:port\nUsername: slartibartfarst""")
+
+def test_exception_prefs_commandline_invalid(capsys):
+    args = ["--jss-info", "--no-keychain", "--prefs-file", "/etc/passwd"]
+    with pytest.raises(git2jss.exceptions.Git2JSSError):
+        git2jss.main(argv=args)
+    out = capsys.readouterr()[0]
+    assert out.find(
+        """Preferences file""")
+
 def test_prefs_setup(capsys, monkeypatch):
     from functools import partial
     import getpass
@@ -272,3 +288,4 @@ def test_exception_no_tag_or_branch(capsys, prefs_file_no_keychain):
     out = capsys.readouterr()[0]
     assert out.find(
         """(Please specify with '--tag' or '--branch')""")
+

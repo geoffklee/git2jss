@@ -24,6 +24,7 @@ import re
 import argparse
 import tempfile
 import shutil
+import xml
 from string import Template
 from base64 import b64encode
 import jss
@@ -110,6 +111,10 @@ def _get_args(argv=None):
                         help=('Path to the locally checked-out copy of the git repo you want '
                               'to work on'))
 
+    parser.add_argument('--prefs-file', metavar='PLIST', default=None, dest='prefs_file',
+                        help=(('Specify a preferences file to use. You can use this option'
+                               'to talk to multiple separate JamfPro servers')))
+
     file_or_all = parser.add_mutually_exclusive_group()
 
     file_or_all.add_argument('--file', metavar='FILE', dest='source_file', type=str,
@@ -149,15 +154,19 @@ def main(argv=None, prefs_file=None):
     """ Main function """
     options = _get_args(argv)
 
-    prefs_file = prefs_file or find_prefs_file()
+    prefs_file = prefs_file or options.prefs_file or find_prefs_file()
+    print(prefs_file)
 
     target_type = set_mode(options)
 
-    if options.no_keychain:
-        jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
-    else:
-        # Use our subclass for keychain support
-        jss_prefs = KJSSPrefs(preferences_file=prefs_file)
+    try:
+        if options.no_keychain:
+            jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
+        else:
+            # Use our subclass for keychain support
+            jss_prefs = KJSSPrefs(preferences_file=prefs_file)
+    except xml.parsers.expat.ExpatError as err:
+        raise Git2JSSError("Preferences file {} invalid: {}".format(prefs_file, err))
 
     # Create a new JSS object
     _jss = jss.JSS(jss_prefs)
