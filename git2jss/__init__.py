@@ -155,7 +155,6 @@ def main(argv=None, prefs_file=None):
     options = _get_args(argv)
 
     prefs_file = prefs_file or options.prefs_file or find_prefs_file()
-    print(prefs_file)
 
     target_type = set_mode(options)
 
