@@ -4,6 +4,7 @@ import plistlib
 import subprocess
 import os
 import jss
+import git2jss.vcs as vcs
 
 # This filecontains all of our fixtures
 
@@ -15,6 +16,11 @@ import jss
 #
 # The idea here is that this fixture returns a function which takes an optional argument
 # containing the data that we want in our test preferences file.
+
+@pytest.fixture(scope='session', name='git2jss_test_repo')
+def fixture_git2jss_test_repo():
+    return 'https://github.com/gkluoe/git2jss-test.git'
+
 
 
 @pytest.fixture(scope="function", name="prefs_file_no_keychain")
@@ -75,30 +81,41 @@ def fixture_a_gitrepo(jss_repo):
     repo = vcs.GitRepo(tag='0.0.49', sourcedir=jss_repo)
     return repo
 
-TEST_REPO = 'https://github.com/gkluoe/git2jss-test.git'
-
 
 @pytest.fixture(scope="session", name="gitrepo")
-def fixture_gitrepo(tmpdir_factory):
+def fixture_gitrepo(tmpdir_factory, git2jss_test_repo):
     """ Return a valid GitRepo object """
     tmp_dir = str(tmpdir_factory.mktemp('gitrepo'))
-    _build_local_repo(tmp_dir, remote=TEST_REPO)
+    _build_local_repo(tmp_dir, remote=git2jss_test_repo)
     return vcs.GitRepo(tag='test-1.0.0',
                        sourcedir=tmp_dir)
 
 
 @pytest.fixture(scope="session", name="gitrepo_master")
-def fixture_gitrepo_master(tmpdir_factory):
+def fixture_gitrepo_master(tmpdir_factory, git2jss_test_repo):
     """ Return a valid GitRepo object """
     tmp_dir = str(tmpdir_factory.mktemp('gitrepo'))
-    _build_local_repo(tmp_dir, remote=TEST_REPO)
+    _build_local_repo(tmp_dir, remote=git2jss_test_repo)
     return vcs.GitRepo(branch='master',
                        sourcedir=tmp_dir)
 
 @pytest.fixture(scope="session", name="gitrepo_branch001")
-def fixture_gitrepo_branch001(tmpdir_factory):
+def fixture_gitrepo_branch001(tmpdir_factory, git2jss_test_repo):
     """ Return a valid GitRepo object """
     tmp_dir = str(tmpdir_factory.mktemp('gitrepo'))
-    _build_local_repo(tmp_dir, remote=TEST_REPO)
+    _build_local_repo(tmp_dir, remote=git2jss_test_repo)
     return vcs.GitRepo(branch='branch001',
                        sourcedir=tmp_dir)
+
+
+def _build_local_repo(test_dir, remote=None):
+    """ Build a fresh local git repo.
+    if `remote` is specified, add the URL
+    to the repo as a new git remote
+    """
+    subprocess.call(["git", "init", "."],
+                    cwd=test_dir)
+    if remote:
+        subprocess.call(["git", "remote",
+                         "add", "origin",
+                         remote], cwd=test_dir)

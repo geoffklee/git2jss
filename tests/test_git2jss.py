@@ -208,15 +208,15 @@ def test_exception_invalid_repo(prefs_file_no_keychain):
         git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
 @pytest.mark.need_jss
-def test_exception_invalid_file(prefs_file_no_keychain, jss_repo):
+def test_exception_invalid_file(jss_repo):
     args = ["--mode", "Script", 
             "--file", "NotAFile",
             "--local-repo", jss_repo, 
             "--name", "macad-2018-test.py",
             "--tag", "0.0.49",
-            "--no-keychain"]
+            ]
     with raises(git2jss.vcs.FileNotFoundError):
-        git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
+        git2jss.main(argv=args)
 
 
 def test_exception_invalid_mode(capsys, prefs_file_no_keychain, jss_repo):

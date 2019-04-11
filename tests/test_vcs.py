@@ -36,10 +36,10 @@ def test_new_no_remote(tmpdir):
                     sourcedir=str(tmpdir))
 
 
-def test_too_many_remotes(tmpdir):
+def test_too_many_remotes(tmpdir, git2jss_test_repo):
     """ Directory has too many remotes configured """
     _build_local_repo(str(tmpdir),
-                      remote=TEST_REPO)
+                      remote=git2jss_test_repo)
     # Add another remote
     subprocess.call(["git", "remote",
                      "add", "notherone",
@@ -51,42 +51,42 @@ def test_too_many_remotes(tmpdir):
                     sourcedir=str(tmpdir))
 
 
-def test_new_no_tag_on_remote(tmpdir):
+def test_new_no_tag_on_remote(tmpdir, git2jss_test_repo):
     """ Remote doesn't have our tag """
     _build_local_repo(str(tmpdir),
-                      remote=TEST_REPO)
+                      remote=git2jss_test_repo)
     with raises(vcs.RefNotFoundError):
         vcs.GitRepo(tag='NotATag',
                     sourcedir=str(tmpdir))
 
-def test_new_no_branch_on_remote(tmpdir):
+def test_new_no_branch_on_remote(tmpdir, git2jss_test_repo):
     """ Remote doesn't have our tag """
     _build_local_repo(str(tmpdir),
-                      remote=TEST_REPO)
+                      remote=git2jss_test_repo)
     with raises(vcs.RefNotFoundError):
         vcs.GitRepo(branch='NotBranch',
                     sourcedir=str(tmpdir))
 
-def test_new_with_tag(gitrepo):
+def test_new_with_tag(gitrepo, git2jss_test_repo):
     """ Successfully instantiate a GitRepo """
     # '.git' should have been trimmed from the repo URL
-    assert gitrepo.remote_url == TEST_REPO[:-4]
+    assert gitrepo.remote_url == git2jss_test_repo[:-4]
     assert gitrepo.remote_name == "origin"
     assert gitrepo.tag == "test-1.0.0"
 
 
-def test_new_with_master(gitrepo_master):
+def test_new_with_master(gitrepo_master, git2jss_test_repo):
     """ Successfully instantiate a GitRepo """
     # '.git' should have been trimmed from the repo URL
-    assert gitrepo_master.remote_url == TEST_REPO[:-4]
+    assert gitrepo_master.remote_url == git2jss_test_repo[:-4]
     assert gitrepo_master.remote_name == "origin"
     assert gitrepo_master.branch == "master"
 
 
-def test_new_with_branch001(gitrepo_branch001):
+def test_new_with_branch001(gitrepo_branch001, git2jss_test_repo):
     """ Successfully instantiate a GitRepo """
     # '.git' should have been trimmed from the repo URL
-    assert gitrepo_branch001.remote_url == TEST_REPO[:-4]
+    assert gitrepo_branch001.remote_url == git2jss_test_repo[:-4]
     assert gitrepo_branch001.remote_name == "origin"
     assert gitrepo_branch001.branch == "branch001"
 
