@@ -7,34 +7,6 @@ from pytest import raises
 import git2jss.vcs as vcs
 import git2jss.exceptions as exceptions
 
-TEST_REPO = 'https://github.com/gkluoe/git2jss-test.git'
-
-
-@pytest.fixture(scope="session", name="gitrepo")
-def fixture_gitrepo(tmpdir_factory):
-    """ Return a valid GitRepo object """
-    tmp_dir = str(tmpdir_factory.mktemp('gitrepo'))
-    _build_local_repo(tmp_dir, remote=TEST_REPO)
-    return vcs.GitRepo(tag='test-1.0.0',
-                       sourcedir=tmp_dir)
-
-
-@pytest.fixture(scope="session", name="gitrepo_master")
-def fixture_gitrepo_master(tmpdir_factory):
-    """ Return a valid GitRepo object """
-    tmp_dir = str(tmpdir_factory.mktemp('gitrepo'))
-    _build_local_repo(tmp_dir, remote=TEST_REPO)
-    return vcs.GitRepo(branch='master',
-                       sourcedir=tmp_dir)
-
-@pytest.fixture(scope="session", name="gitrepo_branch001")
-def fixture_gitrepo_branch001(tmpdir_factory):
-    """ Return a valid GitRepo object """
-    tmp_dir = str(tmpdir_factory.mktemp('gitrepo'))
-    _build_local_repo(tmp_dir, remote=TEST_REPO)
-    return vcs.GitRepo(branch='branch001',
-                       sourcedir=tmp_dir)
-
 
 def _build_local_repo(test_dir, remote=None):
     """ Build a fresh local git repo.

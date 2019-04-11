@@ -14,68 +14,24 @@ import git2jss.jss_keyring
 import mock
 from mock import patch
 
-# This is brain-melting. See:
-# https://stackoverflow.com/questions/18011902/py-test-pass-a-parameter-to-a-fixture-function
-# and
-# https://docs.pytest.org/en/latest/fixture.html
-#
-# The idea here is that this fixture returns a function which takes an optional argument
-# containing the data that we want in our test preferences file.
 
-
-@pytest.fixture(scope="function", name="prefs_file_no_keychain")
-def fixture_prefs_file_no_keychain(request):
-    """ Return a function which creates a test prefs file
-    and cleans up afterwards
-    """
-    def make_test_prefs(prefs_data=None):
-        """ Create a test preferences file and clean up afterwards """
-        default_data = {"jss_url": u"https://some.domain.example.com/directory:port",
-                        "jss_user": u"slartibartfarst",
-                        "jss_pass": u"123blah456blah"}
-
-        prefs_data = prefs_data or default_data
-        prefs_file = tempfile.mktemp()
-        plistlib.writePlist(prefs_data, prefs_file)
-
-        def fin():
-            """ Delete temp file """
-            print("Deleting temp prefs file")
-            os.unlink(prefs_file)
-        request.addfinalizer(fin)
-
-        return prefs_file
-    return make_test_prefs
-
-
-def _check_prefs_values(prefs_file_no_keychain, prefs_data):
-    """ Check that the values in a JSSPrefs object instantiated
-    using the file `test_prefs` match the values in `prefs_data`
-    """
-    jss_prefs = jss.JSSPrefs(preferences_file=prefs_file_no_keychain)
-
-    assert jss_prefs.user == prefs_data.get('jss_user')
-    assert jss_prefs.url == prefs_data.get('jss_url')
-    assert jss_prefs.password == prefs_data.get('jss_pass')
-
-
-def test_get_prefs_unicode(prefs_file_no_keychain):
+def test_get_prefs_unicode(prefs_file_no_keychain, check_prefs_values):
     """ Can we get our prefs? Can they handle unicode? """
     prefs_data = {"jss_url": u"https://some.domain.example.com/directory:port",
                   "jss_user": u"ਫ ਬ ਭ 1 2 3",
                   "jss_pass": u"զ է ը թ 4 5 6"}
 
-    _check_prefs_values(prefs_file_no_keychain(
+    check_prefs_values(prefs_file_no_keychain(
         prefs_data=prefs_data), prefs_data)
 
 
-def test_get_prefs_ascii(prefs_file_no_keychain):
+def test_get_prefs_ascii(prefs_file_no_keychain, check_prefs_values):
     """ Can we get our prefs? Can they handle unicode? """
     prefs_data = {"jss_url": u"https://some.domain.example.com/directory:port",
                   "jss_user": u"slartibartfarst",
                   "jss_pass": u"123blah456blah"}
 
-    _check_prefs_values(prefs_file_no_keychain(
+    check_prefs_values(prefs_file_no_keychain(
         prefs_data=prefs_data), prefs_data)
 
 
@@ -163,20 +119,20 @@ def test_prefs_setup(capsys, monkeypatch):
     os.unlink(prefs_file)
 
 @pytest.mark.need_jss
-def test_create_script_from_custom_src_branch():
+def test_create_script_from_custom_src_branch(jss_repo):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--local-repo", jss_repo,  
             "--name", "macad-2018-test.py",
             "--branch", "master"]
     git2jss.main(argv=args)
     # TODO: check that the created script is what we expect
 
 @pytest.mark.need_jss
-def test_create_script_from_dot_branch():
+def test_create_script_from_dot_branch(jss_repo):
     cwd = os.getcwd()
     try:
-        os.chdir('_jss')
+        os.chdir(jss_repo)
         args = ["--mode", "Script", 
                 "--file", "coreconfig-softwareupdate-run.py",
                 "--name", "macad-2018-test.py",
@@ -187,20 +143,21 @@ def test_create_script_from_dot_branch():
     # TODO: check that the created script is what we expect
 
 @pytest.mark.need_jss
-def test_create_script_from_custom_src_tag():
+def test_create_script_from_custom_src_tag(jss_repo):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--local-repo", os.path.join(os.getcwd(), jss_repo), 
             "--name", "macad-2018-test.py",
+            "--local-repo", jss_repo,  
             "--tag", "0.0.49"]
     git2jss.main(argv=args)
     # TODO: check that the created script is what we expect
 
 @pytest.mark.need_jss
-def test_create_script_from_dot_tag():
+def test_create_script_from_dot_tag(jss_repo):
     cwd = os.getcwd()
     try:
-        os.chdir('_jss')
+        os.chdir(jss_repo)
         args = ["--mode", "Script", 
                 "--file", "coreconfig-softwareupdate-run.py",
                 "--name", "macad-2018-test.py",
@@ -210,20 +167,20 @@ def test_create_script_from_dot_tag():
         os.chdir(cwd)
     # TODO: check that the created script is what we expect
 
-def test_exception_invalid_tag(prefs_file_no_keychain):
+def test_exception_invalid_tag(prefs_file_no_keychain, jss_repo):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--local-repo", jss_repo,  
             "--name", "macad-2018-test.py",
             "--tag", "notatag",
             "--no-keychain"]
     with raises(git2jss.vcs.RefNotFoundError):
         git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
     
-def test_exception_invalid_branch(prefs_file_no_keychain):
+def test_exception_invalid_branch(prefs_file_no_keychain, jss_repo):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--local-repo", jss_repo, 
             "--name", "macad-2018-test.py",
             "--branch", "notabranch",
             "--no-keychain"]
@@ -231,10 +188,10 @@ def test_exception_invalid_branch(prefs_file_no_keychain):
         git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
 @pytest.mark.need_jss
-def test_exception_invalid_target():
+def test_exception_invalid_target(jss_repo):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", os.path.join(os.getcwd(), "_jss"), 
+            "--local-repo", jss_repo, 
             "--name", "NotAJSSObject",
             "--tag", "0.0.49"]
     with raises(git2jss.processors.TargetNotFoundError):
@@ -251,10 +208,10 @@ def test_exception_invalid_repo(prefs_file_no_keychain):
         git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
 @pytest.mark.need_jss
-def test_exception_invalid_file(prefs_file_no_keychain):
+def test_exception_invalid_file(prefs_file_no_keychain, jss_repo):
     args = ["--mode", "Script", 
             "--file", "NotAFile",
-            "--local-repo", "_jss", 
+            "--local-repo", jss_repo, 
             "--name", "macad-2018-test.py",
             "--tag", "0.0.49",
             "--no-keychain"]
@@ -262,10 +219,10 @@ def test_exception_invalid_file(prefs_file_no_keychain):
         git2jss.main(argv=args, prefs_file=prefs_file_no_keychain())
 
 
-def test_exception_invalid_mode(capsys, prefs_file_no_keychain):
+def test_exception_invalid_mode(capsys, prefs_file_no_keychain, jss_repo):
     args = ["--mode", "NotAMode", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", "_jss", 
+            "--local-repo", jss_repo, 
             "--name", "macad-2018-test.py",
             "--tag", "0.0.49",
             "--no-keychain"]
@@ -276,10 +233,10 @@ def test_exception_invalid_mode(capsys, prefs_file_no_keychain):
         """(choose from 'Script', 'ComputerExtensionAttribute')""")
 
 
-def test_exception_no_tag_or_branch(capsys, prefs_file_no_keychain):
+def test_exception_no_tag_or_branch(capsys, prefs_file_no_keychain, jss_repo):
     args = ["--mode", "Script", 
             "--file", "coreconfig-softwareupdate-run.py",
-            "--local-repo", "_jss", 
+            "--local-repo", jss_repo, 
             "--name", "macad-2018-test.py",
             "--no-keychain"
             ]

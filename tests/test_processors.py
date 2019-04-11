@@ -2,6 +2,7 @@
 import git2jss.processors as processors
 import git2jss.vcs as vcs
 import git2jss.jss_keyring as jkc
+import subprocess
 import pytest
 from pytest import raises
 import jss
@@ -13,11 +14,19 @@ def fixture_a_jss():
     JSS = jss.JSS(prefs)
     return JSS
 
+@pytest.fixture(scope="session", name="jss_repo")
+def fixture_jss_repo(tmpdir_factory):
+    """ Return a valid GitRepo object """
+    tmp_dir = str(tmpdir_factory.mktemp('source_gitrepo'))
+    subprocess.check_call(['git', 'clone', 'https://github.com/uoe-macos/jss', tmp_dir])
+    return tmp_dir
+
 
 @pytest.fixture(scope='session', name='a_gitrepo')
-def fixture_a_gitrepo():
-    repo = vcs.GitRepo(tag='0.0.49', sourcedir='_JSS')
+def fixture_a_gitrepo(jss_repo):
+    repo = vcs.GitRepo(tag='0.0.49', sourcedir=jss_repo)
     return repo
+
 
 
 @pytest.mark.need_jss
