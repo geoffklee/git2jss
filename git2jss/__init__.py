@@ -67,13 +67,16 @@ VERSION = "1.0.0"
 PROCESSORS = ['Script', 'ComputerExtensionAttribute']
 
 def _get_args(argv=None):
-    """ Parse arguments from the commandline and return something sensible """
+    """ Parse arguments from the commandline and return an object containing them """
 
-    parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [ --mode MODE ] '
-                                            '[--create]  [ --no-keychain] [--all | --file FILE '
-                                            '[ --name NAME ] ]  [ --tag TAG | --branch BRANCH ]'),
-                                     version=VERSION, description=DESCRIPTION, epilog=EPILOG,
+    parser = argparse.ArgumentParser(usage=('git2jss [-v --version] [-i --jss-info] [-h] [ --mode MODE ] '
+                                            '[ --no-keychain ] [ --prefs-file ] (--all | --file FILE '
+                                            '[ --name NAME ])  (--tag TAG | --branch BRANCH)'),
+                                     description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument('-v', '--version', action='version', version=VERSION,
+                        help='Display the version and exit')
 
     parser.add_argument('-i', '--jss-info', action='store_true', dest='jss_info',
                         help="Show information about the currently configured JSS")
@@ -135,7 +138,7 @@ def _get_args(argv=None):
 
     # Unless we've only been asked for JSS info, we need a tag or branch to do anything
     if not options.jss_info and (not (options.branch or options.tag)):
-        parser.error(("Which tag or branch HEAD do you want to push?"
+        parser.error(("Which tag or branch HEAD do you want to push?\n"
                       "Please specify with '--tag' or '--branch'"))
 
     # Can't specify --branch and --tag
