@@ -69,8 +69,9 @@ PROCESSORS = ['Script', 'ComputerExtensionAttribute']
 def _get_args(argv=None):
     """ Parse arguments from the commandline and return an object containing them """
 
-    parser = argparse.ArgumentParser(usage=('git2jss [-v --version] [-i --jss-info] [-h] [ --mode MODE ] '
-                                            '[ --no-keychain ] [ --prefs-file ] (--all | --file FILE '
+    parser = argparse.ArgumentParser(usage=('git2jss [-v --version] [-i --jss-info] [-h] '
+                                            '[ --mode MODE ] [ --no-keychain ] '
+                                            '[ --prefs-file ] (--all | --file FILE '
                                             '[ --name NAME ])  (--tag TAG | --branch BRANCH)'),
                                      description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
