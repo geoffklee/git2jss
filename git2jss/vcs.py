@@ -237,6 +237,5 @@ class GitRepo(object):
 
         # Parse into a list of tags and branches that exist on the git remote
         refs = [t.split('\t')[-1:][0].split('/')[-1:][0] for t in reflist.split('\n')]
-        print(refs)
         # Does tag exist?
         return r_name in refs
