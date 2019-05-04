@@ -25,8 +25,8 @@ import io
 from git2jss.exceptions import Git2JSSError
 
 
-class TagNotFoundError(Git2JSSError):
-    """ Tag wasn't found """
+class RefNotFoundError(Git2JSSError):
+    """ Ref wasn't found """
     pass
 
 
@@ -48,25 +48,37 @@ class NotAGitRepoError(Git2JSSError):
     """ Dir is not a git repo """
     pass
 
+class ParameterError(Git2JSSError):
+    """ Method called with unusable parameters  """
+    pass
 
 class GitRepo(object):
     """ Provides a representation of a Git repository at a particular
-        tag, with methods to retrieve files and information.
+        point in time, with methods to retrieve files and information.
     """
 
-    def __init__(self, tag, create=False, sourcedir='.'):
+    def __init__(self, tag=None, branch=None, sourcedir='.'):
         """ Create a GitRepo object which represents the
-        remote repository at state `tag`
+        remote repository. The remote repository will be cloned using
+        the `tag` OR `branch` specified. `tag` and `branch` together
+        is an error.
 
         :param tag: The VCS tag to use to base this object on
-        :param create: (optional) Whether to create the tag if it doesn't
-            exist
+        :param branch: The VCS reference to use to base this object on
         :param sourcedir: (optional) The local directory from which to
             glean informaton about the remote repository. Defaults to '.'
         :rtype: vcs.GitRepo
         """
 
         self.tag = tag
+        self.branch = branch
+
+        if not (tag or branch):
+            raise ParameterError("Specify only one of `tag` or `branch`")
+
+        # The reference we will use to clone the repo from
+        self.ref = tag or branch
+
         self.sourcedir = sourcedir
         self.tmp_dir = tempfile.mkdtemp()
 
@@ -79,19 +91,15 @@ class GitRepo(object):
 
         self.remote_url = self._find_remote_url()
 
-        if self._has_tag_on_remote(self.tag):
+        if self._has_ref_on_remote(self.ref):
             self._clone_to_tmp()
         else:
-            if not create:
-                raise TagNotFoundError("tag doesn't exist on git remote {}: {}"
-                                       .format(self.remote_url, self.tag))
-            else:
-                self.create_tag()
-                self.__init__(tag)  # pylint: disable=non-parent-init-called
+            raise RefNotFoundError("Tag or branch {} doesn't exist on git remote {}"
+                                   .format(self.ref, self.remote_url))
 
     def __del__(self):
         """ Called when there are 0 references left to this
-        object. try to delete our temporary directory.
+        object. Try to delete our temporary directory.
         """
         # I don't think this is the best way to do this.
         # we should be using a context manager but I don't know
@@ -137,31 +145,32 @@ class GitRepo(object):
         return _url
 
     def _clone_to_tmp(self):
-        """ Check out a fresh copy of the `tag` we are going to operate on
-            script_tag must be present on the git remote
+        """ Clone fresh copy of the repo we are going to operate on
+            self.ref must be present as a tag or branch on the git remote
         """
         print("Git remote: {}".format(self.remote_url))
         # Use check_output to suppress stdout, which is rather chatty
         # even with '-q'.
         try:
             subprocess.check_output(["git", "clone", "-q", "--branch",
-                                     self.tag, self.remote_url + ".git",
+                                     self.ref, self.remote_url + ".git",
                                      self.tmp_dir], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             # Don't know what happened!
             raise Git2JSSError(err.output)
         else:
-            print("Checked out tag {}.".format(self.tag))
+            print("Checked out repo at {}.".format(self.ref))
 
-    def create_tag(self, msg='Tagged by Git2jss'):
-        """ Create tag and push to git remote
-        :param msg: (optional) Message to attach to the tag when creating it.
+
+    def _format_commit(self, filename):
+        """ Return a string combining the commit ID and branch
+        of `filename` to be the 'version' of a file in this repo.
         """
-        subprocess.check_call(['git', 'tag', '-a', self.tag, '-m', msg],
-                              cwd=self.tmp_dir)
-        subprocess.check_call(['git', 'push', 'origin', self.tag],
-                              cwd=self.tmp_dir)
-        print("Tag {} pushed to git remote".format(self.tag))
+        commit = subprocess.check_output(["git", "log",
+                                          "-1", "--format=%H",
+                                          filename], cwd=self.tmp_dir).strip()
+
+        return '{} on branch: {}'.format(commit, self.branch)
 
     def file_info(self, filename):
         """ Return a dict of information about `filename`
@@ -170,7 +179,7 @@ class GitRepo(object):
         """
         if self.has_file(filename):
             git_info = {}
-            git_info['VERSION'] = self.tag
+            git_info['VERSION'] = self.tag or self._format_commit(filename)
             git_info['ORIGIN'] = self.remote_url
             git_info['PATH'] = filename
             git_info['DATE'] = subprocess.check_output(["git", "log",
@@ -181,8 +190,8 @@ class GitRepo(object):
                                                        filename], cwd=self.tmp_dir).strip()
             return git_info
         else:
-            raise FileNotFoundError("Couldn't find file {} at tag {}"
-                                    .format(filename, self.tag))
+            raise FileNotFoundError("Couldn't find file {} at ref {}"
+                                    .format(filename, self.ref))
 
     def path_to_file(self, filename):
         """ Return absolute path to `filename` inside
@@ -195,14 +204,15 @@ class GitRepo(object):
         if self.has_file(filename):
             return os.path.abspath(path)
         else:
-            raise FileNotFoundError("Couldn't find file {} at tag {}"
-                                    .format(filename, self.tag))
+            raise FileNotFoundError("Couldn't find file {} at tag/branch {}"
+                                    .format(filename, self.ref))
 
     def has_file(self, filename):
         """ Return True if `filename` exists in this
-        repo at this tag version, False of not
+        repo at this tag/branch. False if not
         :param filename: path to a file relative to the root of the
             repository
+        :rtype: Bool
         """
         path = os.path.join(self.tmp_dir, filename)
         return os.path.isfile(os.path.abspath(path))
@@ -211,18 +221,21 @@ class GitRepo(object):
         """ Return an open file handle to `filename`
         :param filename: path to a file relative to the root of the
             repsitory
+        :rtype: File-like object
         """
         handle = io.open(self.path_to_file(filename), 'r', encoding="utf-8")
         return handle
 
-    def _has_tag_on_remote(self, tag):
-        """ Check whether `tag` exists in the current repo
-        :rtype: True or false.
+    def _has_ref_on_remote(self, r_name):
+        """ Check whether a tag or branch `r_name` exists in
+        the current repo
+        :rtype: Boolean
         """
-        # Get tags from the git remote
-        taglist = subprocess.check_output(['git', 'ls-remote', '--tags'],
+        # Get refs from the git remote
+        reflist = subprocess.check_output(['git', 'ls-remote', '--refs'],
                                           cwd=self.sourcedir)
-        # Parse into a list of tags that exist on the git remote
-        tags = [t.split('/')[-1:][0] for t in taglist.split('\n')]
+
+        # Parse into a list of tags and branches that exist on the git remote
+        refs = [t.split('\t')[-1:][0].split('/')[-1:][0] for t in reflist.split('\n')]
         # Does tag exist?
-        return tag in tags
+        return r_name in refs

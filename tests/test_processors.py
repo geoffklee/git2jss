@@ -2,63 +2,81 @@
 import git2jss.processors as processors
 import git2jss.vcs as vcs
 import git2jss.jss_keyring as jkc
+import subprocess
 import pytest
 from pytest import raises
 import jss
 
-# You'll need to create this file...
-prefs = jkc.KJSSPrefs(preferences_file='tests/com.github.gkluoe.git2jss.plist')
+@pytest.fixture(scope="session", name="a_jss")
+def fixture_a_jss():
+    # You'll need to create this file...
+    prefs = jkc.KJSSPrefs(preferences_file='tests/com.github.gkluoe.git2jss.plist')
+    JSS = jss.JSS(prefs)
+    return JSS
 
-JSS = jss.JSS(prefs)
-repo = vcs.GitRepo(tag='0.0.49', sourcedir='_JSS')
+@pytest.fixture(scope="session", name="jss_repo")
+def fixture_jss_repo(tmpdir_factory):
+    """ Return a valid GitRepo object """
+    tmp_dir = str(tmpdir_factory.mktemp('source_gitrepo'))
+    subprocess.check_call(['git', 'clone', 'https://github.com/uoe-macos/jss', tmp_dir])
+    return tmp_dir
 
-def test_new_generic_object():
+
+@pytest.fixture(scope='session', name='a_gitrepo')
+def fixture_a_gitrepo(jss_repo):
+    repo = vcs.GitRepo(tag='0.0.49', sourcedir=jss_repo)
+    return repo
+
+
+
+@pytest.mark.need_jss
+def test_new_generic_object(a_gitrepo, a_jss):
     """ Can we create a new Script object? """
     newobj = processors.JSSObject(
-        repo, JSS, 'coreconfig-softwareupdate-run.py', target='macad-2018-test.py')
+        a_gitrepo, a_jss, 'coreconfig-softwareupdate-run.py', target='macad-2018-test.py')
     assert newobj
 
-
-def test_new_script_object():
+@pytest.mark.need_jss
+def test_new_script_object(a_gitrepo, a_jss):
     """ Can we create a new Script object? """
-    newobj = processors.Script(repo, JSS, source_file='coreconfig-softwareupdate-run.py',
+    newobj = processors.Script(a_gitrepo, a_jss, source_file='coreconfig-softwareupdate-run.py',
                                target='macad-2018-test.py')
     assert newobj
 
-
-def test_new_script_object_badfile():
+@pytest.mark.need_jss
+def test_new_script_object_badfile(a_gitrepo, a_jss):
     """ Can we create a new Script object? """
     with raises(vcs.FileNotFoundError):
-        processors.Script(repo, JSS, source_file='sausages',
+        processors.Script(a_gitrepo, a_jss, source_file='sausages',
                                    target='macad-2018-test.py')
 
-
-def test_new_script_object_badtarget():
+@pytest.mark.need_jss
+def test_new_script_object_badtarget(a_gitrepo, a_jss):
     """ Can we create a new Script object? """
     with raises(processors.TargetNotFoundError):
-        processors.Script(repo, JSS, source_file='coreconfig-softwareupdate-run.py',
+        processors.Script(a_gitrepo, a_jss, source_file='coreconfig-softwareupdate-run.py',
                                    target='foo')
 
-
-def test_new_cea_object():
+@pytest.mark.need_jss
+def test_new_cea_object(a_gitrepo, a_jss):
     """ Can we create a new Script object? """
     newobj = processors.ComputerExtensionAttribute(
-        repo, JSS, source_file='coreconfig-softwareupdate-run.py', target='test-1')                                                   
+        a_gitrepo, a_jss, source_file='coreconfig-softwareupdate-run.py', target='test-1')                                                   
     assert newobj
 
-
-def test_update_cea_object():
+@pytest.mark.need_jss
+def test_update_cea_object(a_gitrepo, a_jss):
     """ Can we update a CEA object ? """
     newobj = processors.ComputerExtensionAttribute(
-        repo, JSS, source_file='coreconfig-softwareupdate-run.py', target='test-1')                                                   
+        a_gitrepo, a_jss, source_file='coreconfig-softwareupdate-run.py', target='test-1')                                                   
     
     newobj.update()
 
-
-def test_save_cea_object():
+@pytest.mark.need_jss
+def test_save_cea_object(a_gitrepo, a_jss):
     """ Can we save a CEA object ? """
     newobj = processors.ComputerExtensionAttribute(
-        repo, JSS, source_file='coreconfig-softwareupdate-run.py', target='test-1')                                                   
+        a_gitrepo, a_jss, source_file='coreconfig-softwareupdate-run.py', target='test-1')                                                   
     
     newobj.update()
     newobj.save()

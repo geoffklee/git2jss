@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2018 Geoff Lee <g.lee@ed.ac.uk>
+# Copyright (C) 2019 Geoff Lee <g.lee@ed.ac.uk>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import re
 import argparse
 import tempfile
 import shutil
+import xml
 from string import Template
 from base64 import b64encode
 import jss
@@ -34,9 +35,10 @@ from .exceptions import Git2JSSError
 
 
 
-DESCRIPTION = """A tool to update scripts on the JSS to match a tagged release in a Git repository.
+DESCRIPTION = """A tool to update scripts on the JSS to match a tag or the head
+of a branch in a Git repository.
 
-The tool can create a new tag, or push scripts from an existing tag.
+The tool can push scripts from an existing tag or from the head of any branch
 
 The 'notes' field of the JSS script object will contain the Git log for the corresponding
 Script file. Some templating is also carried out.
@@ -47,7 +49,7 @@ MANY thanks to sheagcraig for that module:  https://github.com/sheagcraig/python
 TEMPLATING: The following fields, if present in the script file, will be templated with values from Git
 
 @@DATE Date of last change
-@@VERSION The name of the TAG this file was pushed from
+@@VERSION The name of the TAG this file was pushed from, or the commit ID combined with BRANCH
 @@ORIGIN Origin URL from Git config
 @@PATH The path to the script file relative to the root of the Git repo
 @@USER JSS Username used to push the script (from jss-python configuration)
@@ -58,27 +60,38 @@ TEMPLATING: The following fields, if present in the script file, will be templat
 EPILOG = """
 """
 
-VERSION = "1.0.0"
+VERSION = "1.1.0rc1"
 
 # List of processors that we support - each is a class in the
 # `processors` module
 PROCESSORS = ['Script', 'ComputerExtensionAttribute']
 
 def _get_args(argv=None):
-    """ Parse arguments from the commandline and return something sensible """
+    """ Parse arguments from the commandline and return an object containing them """
 
-    parser = argparse.ArgumentParser(usage=('git2jss [-i --jss-info] [-h] [ --mode MODE ] '
-                                            '[--create]  [ --no-keychain] [--all | --file FILE '
-                                            '[ --name NAME ] ]  --tag TAG'),
-                                     version=VERSION, description=DESCRIPTION, epilog=EPILOG,
+    parser = argparse.ArgumentParser(usage=('git2jss [-v --version] [-i --jss-info] [-h] '
+                                            '[ --mode MODE ] [ --no-keychain ] '
+                                            '[ --prefs-file ] (--all | --file FILE '
+                                            '[ --name NAME ])  (--tag TAG | --branch BRANCH)'),
+                                     description=DESCRIPTION, epilog=EPILOG,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument('-v', '--version', action='version', version=VERSION,
+                        help='Display the version and exit')
 
     parser.add_argument('-i', '--jss-info', action='store_true', dest='jss_info',
                         help="Show information about the currently configured JSS")
 
-    parser.add_argument('--tag', metavar='TAG', type=str, default=False,
-                        help=('Name of the TAG in Git. The tag must have been pushed to origin: '
+    parser.add_argument('--tag', metavar='TAG', type=str, default=None,
+                        help=('Name of the tag on the git remote to operate from.'
+                              'The tag must have been pushed to the remote: '
                               'locally committed tags will not be accepted.'))
+
+    parser.add_argument('--branch', metavar='BRANCH', type=str, default=None,
+                        help=('An branch on the git remote operate from.'
+                              'eg: develop.'
+                              'The head of the branch will be checked out and used as'
+                              'the source for "--file"'))
 
     parser.add_argument('--mode', metavar='MODE', type=str, choices=PROCESSORS,
                         dest='mode', default='Script',
@@ -91,21 +104,30 @@ def _get_args(argv=None):
                         help=('Name of the target object in the JSS (if omitted, it is assumed '
                               'that the target object has a name exactly matching FILE)'))
 
-    parser.add_argument('--create', action='store_true', default=False, dest='create_tag',
-                        help="If TAG doesn't exist, then create it and push to the server")
-
     parser.add_argument('--no-keychain', action='store_true', default=False, dest='no_keychain',
-                        help=('Do not store authentication credentials in the system keychain.\n'
-                              'You probably do not want to use this option.'))
+                        help=('Do not store authentication credentials in the system keychain. '
+                              'Instead, store them IN PLAINTEXT in the preferences file.\n'
+                              'Be careful with this option - it could be useful in CI/CD '
+                              'environments.'))
+
+    parser.add_argument('--local-repo', metavar='LOCAL_REPO', dest='local_repo', type=str,
+                        default='.',
+                        help=('Path to the locally checked-out copy of the git repo you want '
+                              'to work on'))
+
+    parser.add_argument('--prefs-file', metavar='PLIST', default=None, dest='prefs_file',
+                        help=(('Specify a preferences file to use. You can use this option'
+                               'to talk to multiple separate JamfPro servers')))
 
     file_or_all = parser.add_mutually_exclusive_group()
 
     file_or_all.add_argument('--file', metavar='FILE', dest='source_file', type=str,
-                             help='File containing the script to push to the JSS')
+                             help='File in the Git repo containing the script to push to the JSS')
 
     file_or_all.add_argument('--all', action='store_true', default=False, dest='push_all',
-                             help=('Push every file in the current directory for which there is an '
+                             help=('Push every file in the Git repo for which there is an '
                                    'object with a matching name in the JSS.'))
+
 
     options = parser.parse_args(argv)
 
@@ -115,13 +137,18 @@ def _get_args(argv=None):
         print("WARNING: --all was specified so ignoring --name option")
         options.target_name = None
 
-    # Unless we've only been asked for JSS info, we need a tag to do anything
-    if not options.jss_info and not options.tag:
+    # Unless we've only been asked for JSS info, we need a tag or branch to do anything
+    if not options.jss_info and (not (options.branch or options.tag)):
+        parser.error(("Which tag or branch HEAD do you want to push?\n"
+                      "Please specify with '--tag' or '--branch'"))
+
+    # Can't specify --branch and --tag
+    if options.branch and options.tag:
         parser.error(
-            "Which tag do you want to push? Please specify with '--tag'")
+            "Please specify --branch or --tag, but not both!")
 
     # We need to know which files to operate on!
-    if options.tag and not (options.source_file or options.push_all):
+    if (options.tag or options.branch) and not (options.source_file or options.push_all):
         parser.error("You need to specify either a filename "
                      "(--file FILE) or all files (--all)")
 
@@ -131,15 +158,18 @@ def main(argv=None, prefs_file=None):
     """ Main function """
     options = _get_args(argv)
 
-    prefs_file = prefs_file or find_prefs_file()
+    prefs_file = prefs_file or options.prefs_file or find_prefs_file()
 
     target_type = set_mode(options)
 
-    if options.no_keychain:
-        jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
-    else:
-        # Use our subclass for keychain support
-        jss_prefs = KJSSPrefs(preferences_file=prefs_file)
+    try:
+        if options.no_keychain:
+            jss_prefs = jss.JSSPrefs(preferences_file=prefs_file)
+        else:
+            # Use our subclass for keychain support
+            jss_prefs = KJSSPrefs(preferences_file=prefs_file)
+    except xml.parsers.expat.ExpatError as err:
+        raise Git2JSSError("Preferences file {} invalid: {}".format(prefs_file, err))
 
     # Create a new JSS object
     _jss = jss.JSS(jss_prefs)
@@ -149,11 +179,11 @@ def main(argv=None, prefs_file=None):
         print_jss_info(jss_prefs)
         sys.exit(0)
 
-    _repo = GitRepo(tag=options.tag, create=options.create_tag)
+    _repo = GitRepo(tag=options.tag, branch=options.branch, sourcedir=options.local_repo)
 
     try:
         if options.push_all:
-            files = list_matching_files(".", pattern=r'.*\.(sh|py|pl)$')
+            files = list_matching_files(options.local_repo, pattern=r'.*\.(sh|py|pl)$')
         else:
             files = [options.source_file]
         for this_file in files:
