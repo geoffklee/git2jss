@@ -29,7 +29,7 @@ git pull
 #python setup.py test
 
 # First bump a new version - this creates a new git tag
-new_version="$(bumpversion ${bump_args} | awk -F '=' '/new_version/ {print $2}')"
+new_version="$(bumpversion --tag ${bump_args} | awk -F '=' '/new_version/ {print $2}')"
 
 # Commit the tag
 git push origin v"${new_version}"
