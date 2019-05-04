@@ -9,10 +9,15 @@ pip install bumpversion twine
 
 release_level=${1}
 
-if [ "${release_level}" != "major" ] &&\
-   [ "${release_level}" != "minor" ] &&\
-   [ "${release_level}" != "patch" ]
+if [ "${release_level}" == "major" ] ||\
+   [ "${release_level}" == "minor" ] ||\
+   [ "${release_level}" == "patch" ]
 then
+   bump_args="--list ${release_level}"
+elif [ ! -z "${release_level}" ]
+then
+   bump_args="--list --new-version=${release_level} patch" 
+else 
    echo "Specify major, minor or patch"
    exit 1
 fi
@@ -21,10 +26,10 @@ git checkout master
 
 git pull
 
-python setup.py test
+#python setup.py test
 
 # First bump a new version - this creates a new git tag
-new_version="$(bumpversion --list patch | awk -F '=' '/new_version/ {print $2}')"
+new_version="$(bumpversion ${bump_args} | awk -F '=' '/new_version/ {print $2}')"
 
 # Commit the tag
 git push origin v"${new_version}"
