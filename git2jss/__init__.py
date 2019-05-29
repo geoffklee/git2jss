@@ -60,7 +60,7 @@ TEMPLATING: The following fields, if present in the script file, will be templat
 EPILOG = """
 """
 
-VERSION = "1.1.0rc1"
+VERSION = "2.0.0"
 
 # List of processors that we support - each is a class in the
 # `processors` module
