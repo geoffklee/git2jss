@@ -10,7 +10,7 @@ class TargetNotFoundError(Exception):
     """ Target wasn't found """
     pass
 
-
+# pylint: disable=too-many-instance-attributes
 class JSSObject(object):
     """ Generic Object """
 
@@ -39,7 +39,7 @@ class JSSObject(object):
         # Full path to the source file
         self.source_file_path = source_file
 
-        # If we haven't been provided a target name, assume 
+        # If we haven't been provided a target name, assume
         # it's the name of the source file
         self.target_name = target or self.source_name
 
