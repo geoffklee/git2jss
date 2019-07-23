@@ -3,7 +3,7 @@
 Git2JSS
 ===============================
 
-Version : v2.0.0
+Version : v2.0.1
 
 Author: Geoff Lee
 
