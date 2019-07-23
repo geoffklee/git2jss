@@ -18,6 +18,7 @@ class JSSObject(object):
     jss = None
 
     source_name = None
+    source_file_path = None
     source_file = None
     target_name = None
     target_object = None
@@ -32,8 +33,16 @@ class JSSObject(object):
         `source_file` should be the path to the source file
         """
 
-        self.source_name = (os.path.split(source_file)[1])
+        # The name of the source file, minus any path
+        self.source_name = (os.path.basename(source_file))
+
+        # Full path to the source file
+        self.source_file_path = source_file
+
+        # If we haven't been provided a target name, assume 
+        # it's the name of the source file
         self.target_name = target or self.source_name
+
         self.target_type = target_type
         self.repo = repo
         self._jss = _jss
@@ -62,11 +71,11 @@ class JSSObject(object):
         """ Load the source file from the VCS
         """
         try:
-            self.source_file = self.repo.get_file(self.source_name)
+            self.source_file = self.repo.get_file(self.source_file_path)
         except:
             raise
         else:
-            print ("Loaded {} from version control".format(self.source_name))
+            print ("Loaded {} from version control".format(self.source_file_path))
 
     def update(self, should_template):
         """ Stub method which should be overriden for
@@ -99,7 +108,7 @@ class Script(JSSObject):
             and, if requested, template the script
         """
 
-        info = self.repo.file_info(self.source_name)
+        info = self.repo.file_info(self.source_file_path)
 
         # Add log to the notes field
         self.target_object.find('notes').text = info['LOG']
@@ -136,7 +145,7 @@ class ComputerExtensionAttribute(JSSObject):
         """ Update the notes field to contain the git log,
             and, if requested, template the script
         """
-        info = self.repo.file_info(self.source_name)
+        info = self.repo.file_info(self.source_file_path)
 
         # Add log to the description field
         self.target_object.find('description').text = info['LOG']
