@@ -24,7 +24,7 @@ def fixture_jss_repo(tmpdir_factory):
 
 @pytest.fixture(scope='session', name='a_gitrepo')
 def fixture_a_gitrepo(jss_repo):
-    repo = vcs.GitRepo(tag='0.0.49', sourcedir=jss_repo)
+    repo = vcs.GitRepo(tag='git2jss-test', sourcedir=jss_repo)
     return repo
 
 
@@ -49,6 +49,13 @@ def test_new_script_object_badfile(a_gitrepo, a_jss):
     with raises(vcs.FileNotFoundError):
         processors.Script(a_gitrepo, a_jss, source_file='sausages',
                                    target='macad-2018-test.py')
+
+@pytest.mark.need_jss
+def test_new_script_object_subdirectory(a_gitrepo, a_jss):
+    """ Can we create a new Script object? """
+    newobj = processors.Script(a_gitrepo, a_jss, source_file='_docs/this is a test',
+                      target='macad-2018-test.py')
+    assert newobj
 
 @pytest.mark.need_jss
 def test_new_script_object_badtarget(a_gitrepo, a_jss):
